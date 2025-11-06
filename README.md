@@ -1,19 +1,22 @@
 # Server_v3
+Hello world! This is iPAC K67 development for smart building server.
 
-docker cp backup.sql database:/backup.sql
 
-docker exec -it database bash
 
-psql -U postgres
+<!-- docker cp backup.sql database:/backup.sql -->
 
-DROP DATABASE IF EXISTS server_version_3;
+<!-- docker exec -it database bash -->
 
-CREATE DATABASE server_version_3;
+<!-- psql -U postgres -->
 
-exit
+<!-- DROP DATABASE IF EXISTS server_version_3; -->
 
-psql -U postgres server_version_3 < /backup.sql;
+<!-- CREATE DATABASE server_version_3; -->
 
-tk: ipaclab
+<!-- exit -->
 
-mk: 123456
+<!-- psql -U postgres server_version_3 < /backup.sql; -->
+
+<!-- tk: ipaclab -->
+
+<!-- mk: 123456 -->
