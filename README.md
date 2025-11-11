@@ -142,7 +142,8 @@ Chọn Collection Server version 3 bên phần bên phải màn mình chuyển N
 Tiến hành test thử API
 # Phần 5: Phần Frontend
 ```bash
-cd frontend\Year3_dev_Frontend\main\react-admin  
+
+cd Frontend\K67_Dev_Frontend\main\react-admin
 npm install --legacy-peer-deps
 npm start
 ```
