@@ -1,0 +1,975 @@
+{
+	"info": {
+		"_postman_id": "d4725ddc-83d8-4e72-a4a3-d1f6c6fe7e09",
+		"name": "Server version 3",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "49903743",
+		"_collection_link": "https://duchanclone-6235025.postman.co/workspace/Du-Chan's-Workspace~12e68a4b-8ddc-4294-8fb6-504eb3c272e2/collection/49903743-d4725ddc-83d8-4e72-a4a3-d1f6c6fe7e09?action=share&source=collection_link&creator=49903743"
+	},
+	"item": [
+		{
+			"name": "DeleteEmployee",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": 3,\n    \"node_id\": 2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/employee_permission/1",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"employee_permission",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ListEmployee",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/employee_permission",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"employee_permission"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ResetPassword",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\":\"gladtop@rowdydow.com\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/reset_password",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"reset_password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ChangePassword",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"old_pass\":\"mHaSY3w3\",\n    \"new_pass\":\"dudz123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/change_password",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"change_password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateRoom",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"room_id\": 408,\n    \"construction_name\": \"building\",\n    \"x_length\": 5,\n    \"y_length\": 10,\n    \"information\": \"This is my Room 407\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/configuration_room/",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_room",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateRoom",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"room_id\": 409,\n    \"construction_name\": \"building\",\n    \"x_length\": 5,\n    \"y_length\": 10,\n    \"information\": \"This is my Room 409\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/configuration_room/4/",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_room",
+						"4",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AllRoom",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{local}}/api/configuration_room",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_room"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteRoom",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{local}}/api/configuration_room/4",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_room",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PostEmployee",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": 1,\n    \"node_id\": 9\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/employee_permission",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"employee_permission"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AddNode",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"room_id\": 507,\n    \"x_axis\": 3,\n    \"y_axis\": 8,\n    \"z_axis\": 10,\n    \"function\": \"air\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/configuration_node",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_node"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateNode",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"node_id\": 7,\n        \"x_axis\": 2,\n        \"y_axis\": 7,\n        \"z_axis\": 10,\n        \"function\": \"light\",\n        \"uuid\": \"k1121abcxyz\",\n        \"room_id\": 408\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/configuration_node",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_node"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AllNodeInRoom",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"room_id\":407\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/configuration_node",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_node"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetAllScan",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{local}}/api/all_scan_device?room_id=407",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"all_scan_device"
+					],
+					"query": [
+						{
+							"key": "room_id",
+							"value": "407"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Addnode",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"operator\": \"add_node\",\n  \"status\": \"1\" ,\n  \"info\": {\n    \"room_id\":  407,\n    \"protocol\": \"ble_mesh\",\n    \"dev_info\": {\t\n        \"uuid\": \"123e4567-e89b-12d3-a456-426614174000\",\n        \"device_name\": \"IPAC_LAB_SMART_FARM\",\n        \"mac\": \"AA:BE:CC:DD:EE:FF\",\n        \"address_type\": \"public\",\n        \"oob_info\": \"0x00\",\n        \"adv_type\": 0,\n        \"bearer_type\": \"PB-GATT\",\n        \"rssi\": -55\n      }\n    }\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/configuration_node_ble_mesh",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_node_ble_mesh"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteNode",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"node_id\": 11\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/configuration_node",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"configuration_node"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "SetActuator",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"node_id\": 1,\n    \"setpoint\": 1,\n    \"mode\": \"Timer\",\n    \"temp\": 23,\n    \"start_time\": 111111,\n    \"end_time\": 222222\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/set_actuator",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"set_actuator"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ScanDevice",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"operator\": \"scan_device\",\n    \"status\": \"1\",\n    \"info\": {\n        \"room_id\": \"407\",\n        \"protocol\": \"ble_mesh\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/scan_device",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"scan_device"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateEmployee",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user_id\": 3,\n    \"node_id\": 2\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/employee_permission/2",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"employee_permission",
+						"2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "RawDataSensorNode",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/raw_data_all_sensor?room_id=407",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"raw_data_all_sensor"
+					],
+					"query": [
+						{
+							"key": "room_id",
+							"value": "407"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ActuatorStatus",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/actuator_status?room_id=407&node_id=6",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"actuator_status"
+					],
+					"query": [
+						{
+							"key": "room_id",
+							"value": "407"
+						},
+						{
+							"key": "node_id",
+							"value": "6"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "EmployeePermision",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/employee_node",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"employee_node"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Heatmap",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{local}}/api/heatmap?room_id=407",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"heatmap"
+					],
+					"query": [
+						{
+							"key": "room_id",
+							"value": "407"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Algorithm",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{local}}/api/result_coverage_algorithm?room_id=407",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"result_coverage_algorithm"
+					],
+					"query": [
+						{
+							"key": "room_id",
+							"value": "407"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"var accessToken = jsonData.access; ",
+							"var refreshToken = jsonData.refresh; ",
+							"",
+							"pm.environment.set(\"ac_token\", accessToken);",
+							"pm.environment.set(\"rf_token\", refreshToken);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"trandu1\",\n    \"password\": \"helloanhem\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/token",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Signup",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"trandu1\",\n    \"password\": \"helloanhem\",\n    \"email\": \"gladtop@rowdydow.com\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/signup",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"signup"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.globals.unset(\"ac_token\");"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{ac_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"refresh\": \"{{rf_token}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{local}}/api/logout",
+					"host": [
+						"{{local}}"
+					],
+					"path": [
+						"api",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

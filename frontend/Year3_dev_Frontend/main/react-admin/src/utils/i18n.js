@@ -1,0 +1,110 @@
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+
+i18n
+  .use(initReactI18next)
+  .init({
+    resources: {
+      en: {
+        translation: {
+          "home": "Home",
+          "configuration":"Configuration",
+          "sign out": "Sign out!",
+          "theme": "Change theme",
+          "settings":"Settings",
+          "profile": "Profile",
+          "welcome": "Welcome, {{username}}",
+          "hanoiaqi": "Real-time Hanoi AQI",
+          "temperature": "Temperature",
+          "all":"All",
+          "hudminity": "Hudminity",
+          "pressure":"Pressure",
+          "wind":"Wind",
+          "good":"Good",
+          "moderate":"Moderate",
+          "poor": "Poor",
+          "unhealthy": "Unhealthy",
+          "veryUnhealthy": "Very Unhealthy",
+          "hazardous": "Hazardous",
+          "roominfor": "Room Information",
+          "dust": "Dust",
+          "sound": "Sound",
+          "light": "Light",
+          "motion": "Motion",
+          "tvoc": "TVOC",
+          "energydata":"Energy Data",
+          "voltage": "Voltage",
+          "current": "Current",
+          "active_power": "Active Power",
+          "power_factor": "Power Factor",
+          "frequency": "Frequency",
+          "active_energy": "Active Energy",
+          "room":"ROOM",
+          "heatmap":"HEAT MAP",
+          "connections":"CONNECTIONS",
+          "import":"IMPORT",
+          "titlechartenv": "Environment Parameter Chart",
+          "titleenergy":"Average Active Power",
+          "parameter":"Parameter",
+          "energy":"Energy",
+          "power":"Power",
+          "yes":"Yes",
+          "no":"No"
+        }
+      },
+      vi: {
+        translation: {
+          "home": "Trang Chủ",
+          "configuration":"Điều Chỉnh",
+          "sign out": "Đăng Xuất",
+          "theme": "Đổi Phông",
+          "settings":"Cài Đặt",
+          "profile": "Hồ sơ",
+          "welcome": "Xin Chào, {{username}}",
+          "hanoiaqi": "Chất lượng không khí Hà Nội",
+          "temperature": "Nhiệt độ",
+          "all":"Tất cả",
+          "hudminity": "Độ ẩm",
+          "pressure":"Áp suất",
+          "wind":"Tốc độ gió",
+          "good":"Tốt",
+          "moderate":"Trung bình",
+          "poor": "Kém",
+          "unhealthy": "Có hại cho sức khỏe",
+          "veryUnhealthy": "Rất có hại cho sức khỏe",
+          "hazardous": "Nguy hiểm",
+          "roominfor": "Thông Tin Phòng",
+          "dust": "Bụi mịn",
+          "sound": "Âm thanh",
+          "light": "Ánh sáng",
+          "motion": "Chuyển động",
+          "tvoc": "Khí hữu cơ bay hơi",
+          "energydata":"Dữ liệu năng lượng",
+          "voltage": "Điện áp",
+          "current": "Dòng điện",
+          "active_power": "Công suất",
+          "power_factor": "Hệ số công suất",
+          "frequency": "Tần số",
+          "active_energy": "Tiêu thụ",
+          "room":"PHÒNG",
+          "heatmap":"BẢN ĐỒ NHIỆT",
+          "connections":"NODE KẾT NỐI",
+          "import":"NHẬP FILE",
+          "titlechartenv": "Biểu Đồ Các Thông Số Môi Trường",
+          "titleenergy":"Tổng Điện Năng Tiêu Thụ Trong Tháng",
+          "parameter":"Thông số",
+          "energy":"Năng Lượng",
+          "power":"Công Suất",
+          "yes":"Có",
+          "no":"Không",
+        }
+      }
+    },
+    lng: "en",
+    fallbackLng: "en",
+    interpolation: {
+      escapeValue: false
+    }
+  });
+
+export default i18n;
