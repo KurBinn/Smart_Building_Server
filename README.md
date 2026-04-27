@@ -28,3 +28,6 @@ POSTGRES_PASSWORD = 'M@nh2004'
 <!-- server acc -->
 tk: ipaclab
 mk: 123456
+
+<!-- token for repo (new) -->
+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
