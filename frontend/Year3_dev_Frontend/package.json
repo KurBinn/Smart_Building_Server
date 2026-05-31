@@ -1,0 +1,13 @@
+{
+  "name": "year3-dev-frontend",
+  "private": true,
+  "workspaces": [
+    "main/react-admin"
+  ],
+  "scripts": {
+    "start": "npm --prefix main/react-admin start",
+    "build": "npm --prefix main/react-admin run build",
+    "test": "npm --prefix main/react-admin test",
+    "install:app": "npm --prefix main/react-admin install --legacy-peer-deps"
+  }
+}
