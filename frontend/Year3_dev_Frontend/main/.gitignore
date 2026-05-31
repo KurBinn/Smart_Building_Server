@@ -1,1 +1,3 @@
 node_modules/
+react-admin/build/
+.env
