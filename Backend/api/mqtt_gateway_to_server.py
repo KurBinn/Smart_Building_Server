@@ -14,9 +14,12 @@ _ONE_MINUTE = 60 * _ONE_SECOND
 _ONE_HOUR = 60 * _ONE_MINUTE
 
 backend_topic_dictionary = {
-                        "sensor_data": "farm/monitor/sensor",
-                        "actuator_data": "farm/monitor/actuator",
-                        "health_check": "farm/monitor/alive"
+                        "sensor_data":  "farm/monitor/sensor",
+                        "actuator_data":"farm/monitor/actuator",
+                        "health_check": "farm/monitor/alive",
+                        # WiFi things topics (direct from hardware via broker)
+                        "scan_device": "farm/node/scan",
+                        "keepalive_ack":   "farm/monitor/alive",
                         }
 
 broker = os.environ.get('SERVER_BROKER')
@@ -170,7 +173,9 @@ def DataFromSensorNode():
                     record = ()
 
                     for i in dict_key:
-                        if i in data_receive["info"]:
+                        if i == "time":
+                            record = record + (int(time.time()),)
+                        elif i in data_receive["info"]:
                             record = record + (data_receive["info"][i], )
                         else:
                             record = record + (-1, )
@@ -245,6 +250,8 @@ def DataFromActuator():
                 data_receive = json.loads(message_receive)
 
                 if data_receive["operator"] == "actuator_data":
+                    info = data_receive["info"]
+                    act  = info.get("actuator_data", {})
 
                     try:
                         connect_to_database = psycopg2.connect(
@@ -261,24 +268,17 @@ def DataFromActuator():
 
                     connect_to_database.autocommit = True
                     cursor = connect_to_database.cursor()
-                    query = f"""INSERT INTO api_rawactuatormonitor (room_id, node_id, function, current_value, state, mode, time)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-                    dict_key = [
-                        "room_id",
-                        "node_id",
-                        "function",
-                        "current_value",
-                        "state",
-                        "mode",
-                        "time",
-                    ]
-                    record = ()
-
-                    for i in dict_key:
-                        if i in data_receive["info"]:
-                            record = record + (data_receive["info"][i], )
-                        else:
-                            record = record + (-1, )
+                    query = """INSERT INTO api_rawactuatormonitor (room_id, node_id, function, current_value, state, mode, time)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                    record = (
+                        info.get("room_id", -1),
+                        info.get("node_id", -1),
+                        "fan",
+                        str(act.get("pwm", 0)),
+                        act.get("state", 0),
+                        act.get("fan_speed", "unknown"),
+                        info.get("time", int(time.time())),
+                    )
                     print(record)
                     cursor.execute(query, record)
                     print("Successfully insert RawActuatorMonitor to PostgreSQL")
@@ -333,12 +333,74 @@ def HealthCheckNode():
         except:
             print("Something was wrong while inserting to database !!!")
 
+# ── WiFi node registration ───────────────────────────────────────
+# Listens on farm/node/scan for 'register' messages from WiFi hardware.
+# Saves each new device to api_registrationnode so the server knows about it.
+# The gateway (gw2sv.py) also listens to this topic to send register_ack.
+def RegisterWiFiNode():
+
+    client = ClientMQTT([backend_topic_dictionary["scan_device"]],)
+    client.connect(broker, port)
+    client.loop_start()
+
+    while True:
+        try:
+            message_receive = client.message_arrive()
+
+            if message_receive is not None:
+                print(f"[WiFi] Received register `{message_receive}`")
+                data_receive = json.loads(message_receive)
+
+                if data_receive["operator"] == "register":
+                    info = data_receive["info"]
+
+                    try:
+                        connect_to_database = psycopg2.connect(
+                            database = os.environ.get('POSTGRES_DB'),
+                            user     = os.environ.get('POSTGRES_USER'),
+                            password = os.environ.get('POSTGRES_PASSWORD'),
+                            host     = os.environ.get('HOST_NAME'),
+                            port     = "5432",
+                        )
+                        print("Successfully connected to database in RegisterWiFiNode")
+                    except psycopg2.OperationalError as e:
+                        print(e)
+                        continue
+
+                    connect_to_database.autocommit = True
+                    cursor = connect_to_database.cursor()
+
+                    # Insert new WiFi node; skip if node_id already registered
+                    query = """INSERT INTO api_registrationnode (room_id, node_id, mac, status, time)
+                               VALUES (%s, %s, %s, %s, %s)
+                               ON CONFLICT (node_id) DO NOTHING"""
+                    record = (
+                        info.get('room_id'),
+                        info.get('node_id'),
+                        info.get('mac_address'),
+                        'sync',
+                        int(time.time()),
+                    )
+                    cursor.execute(query, record)
+                    print(f"[WiFi] Registered node_id={info.get('node_id')} mac={info.get('mac_address')}")
+                    cursor.close()
+                    connect_to_database.close()
+
+        except json.JSONDecodeError:
+            print("[WiFi] RegisterWiFiNode: invalid JSON received")
+        except psycopg2.Error as e:
+            print(f"[WiFi] RegisterWiFiNode DB error: {e}")
+        except Exception as e:
+            print(f"[WiFi] RegisterWiFiNode error: {e}")
+# ─────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     process_list = []
     process_list.append(multiprocessing.Process(target = DataFromSensorNode))
     process_list.append(multiprocessing.Process(target = DataFromActuator))
     process_list.append(multiprocessing.Process(target = DataForAqiRef))
     process_list.append(multiprocessing.Process(target = HealthCheckNode))
+    process_list.append(multiprocessing.Process(target = RegisterWiFiNode))  # WiFi node registration
 
     for i in process_list:
         i.start()

@@ -28,6 +28,9 @@ urlpatterns=[
     path('delete_device', views.DeleteScanDevice, name = 'delete_device'),
     path('configuration_node_ble_mesh', views.ConfigurationNodeBleMesh, name = 'configuration_node_ble_mesh'),
 
+## WiFi MQTT (direct to broker, no gateway)
+    path('configuration_node_wifi_mqtt', views.ConfigurationNodeWifiMqtt, name = 'configuration_node_wifi_mqtt'),
+
 # Hiển thị giao diện cho người 
 
     path('set_actuator', views.SetActuator, name = 'set_actuator'),

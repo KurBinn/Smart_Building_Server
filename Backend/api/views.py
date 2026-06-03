@@ -22,7 +22,10 @@ from .serializers import (EmployeePermissionSerializer, RegistrationNodeSerializ
 from .models import (EmployeePermission, RegistrationNode, Room, AqiRef, RawSensorMonitor, EnergyData, RawActuatorMonitor,
                     ScanDevice, NodeConfigurationBuffer, ResultAlgorithm)
 from threading import Thread
-from .mqtt_server_to_gateway import SendNodeToGatewayWifi, SendSetUpActuatorToGateway, ScanDeviceToGateWay, CheckScanDeviceToGateWay, SendAddNodeToGatewayBleMesh, SendDeleteNodeToGatewayBleMesh, client
+from .mqtt_server_to_gateway import (SendNodeToGatewayWifi, SendSetUpActuatorToGateway,
+                                      ScanDeviceToGateWay, CheckScanDeviceToGateWay,
+                                      SendAddNodeToGatewayBleMesh, SendDeleteNodeToGatewayBleMesh,
+                                      ScanDeviceWifiMqtt, SendAddNodeWifiMqtt, client)
 from .coverage_algorithm import CoverageOptimizationNOAlgorithm, CoverageOptimizationFOAAlgorithm
 import os, csv
 from django.contrib.auth import get_user_model
@@ -844,6 +847,15 @@ def ScanDeviceGateWay(request, *args, **kwargs):
 
     try:
         data = json.loads(request.body)
+        protocol = data.get("info", {}).get("protocol", "ble_mesh")
+        room_id = data.get("info", {}).get("room_id")
+
+        if protocol == "wifi_mqtt":
+            t = Thread(target=ScanDeviceWifiMqtt, args=(room_id,))
+            t.start()
+            return Response({"Response": "Processing......."}, status=status.HTTP_200_OK)
+
+        # BLE mesh: send scan command to gateway first, then listen for results
         response = CheckScanDeviceToGateWay(client, data)
 
         if response == False:
@@ -936,16 +948,13 @@ def ConfigurationNodeBleMesh(request, *args, **kwargs):
 
             if serializer_data.is_valid():
                 serializer_data.save()
-                check_buffer = NodeConfigurationBuffer.objects.filter(action = 1).exists()
-                if check_buffer:
-                    if serializer_data_buffer.is_valid():
-                        serializer_data_buffer.save()
-                else:
-                    if serializer_data_buffer.is_valid():
-                        serializer_data_buffer.save()
-                    t = Thread(target = SendAddNodeToGatewayBleMesh, args = (client, "add"))
-                    t.start()
-                return Response({"Response": "Processing......."}, status = status.HTTP_200_OK)
+                # Clear any stale buffer entries from previous failed attempts
+                NodeConfigurationBuffer.objects.filter(action=1).delete()
+                if serializer_data_buffer.is_valid():
+                    serializer_data_buffer.save()
+                t = Thread(target=SendAddNodeToGatewayBleMesh, args=(client, "add"))
+                t.start()
+                return Response({"Response": "Processing......."}, status=status.HTTP_200_OK)
             else:
                 return Response({"Errors": serializer_data_buffer.errors}, status = status.HTTP_400_BAD_REQUEST)
         except:
@@ -989,6 +998,76 @@ def ConfigurationNodeBleMesh(request, *args, **kwargs):
             return Response(
                 {"Response": "Error on server!"},
                 status = status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+@api_view(["POST", "DELETE"])
+@authentication_classes([jwtauthentication.JWTAuthentication])
+@permission_classes([permissions.IsAuthenticated])
+def ConfigurationNodeWifiMqtt(request, *args, **kwargs):
+    """Add or remove a WiFi-MQTT device that connects directly to the broker (no gateway)."""
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            dev_info = data["info"]["dev_info"]
+            room_id = data["info"]["room_id"]
+
+            data_save = {
+                "room_id": room_id,
+                "mac": dev_info["mac"],
+                "uuid": dev_info["uuid"],
+                "device_name": dev_info.get("device_name", "WiFi_Device"),
+                "function": dev_info.get("function", "sensor"),
+                "bearer_type": "WiFi-MQTT",
+                "address_type": -1,
+                "oob_info": -1,
+                "adv_type": -1,
+                "rssi": dev_info.get("rssi", -1),
+                "remote_enable": -1,
+                "remote_unicast": -1,
+                "status": "wait",
+                "time": int((datetime.datetime.now()).timestamp()) + 7 * 60 * 60,
+            }
+            data_buffer = {
+                "action": 1,
+                "mac": dev_info["mac"],
+                "room_id": room_id,
+                "time": data_save["time"],
+            }
+
+            serializer_node = RegistrationNodeSerializer(data=data_save)
+            serializer_buffer = NodeConfigurationBufferSerializer(data=data_buffer)
+
+            if serializer_node.is_valid():
+                serializer_node.save()
+                NodeConfigurationBuffer.objects.filter(action=1).delete()
+                if serializer_buffer.is_valid():
+                    serializer_buffer.save()
+                t = Thread(target=SendAddNodeWifiMqtt, args=("add",))
+                t.start()
+                return Response({"Response": "Processing......."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"Errors": serializer_node.errors}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response(
+                {"Response": "Error on server!"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    if request.method == "DELETE":
+        try:
+            data = json.loads(request.body)
+            node = RegistrationNode.objects.filter(node_id=data["node_id"]).first()
+
+            if node is None:
+                return Response({"Response": "Node not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+            node.delete()
+            return Response({"Response": "Deleted successfully"}, status=status.HTTP_200_OK)
+        except:
+            return Response(
+                {"Response": "Error on server!"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 @api_view(["GET"])

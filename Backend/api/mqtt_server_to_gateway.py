@@ -1,6 +1,6 @@
 from .mqtt_class import ClientMQTT
 import datetime
-import json, time
+import json, time, uuid
 from .models import RegistrationNode, NodeConfigurationBuffer, ScanDevice
 import os
 import psycopg2
@@ -501,6 +501,136 @@ def SendNodeToGatewayWifi(client: ClientMQTT, command: str):
                             return result
     return result
 
+def ScanDeviceWifiMqtt(room_id: int):
+    """Listen on farm/node/scan for WiFi devices broadcasting 'register' messages."""
+
+    _client = ClientMQTT([scan_device])
+    _client.connect(broker, port)
+    _client.loop_start()
+
+    try:
+        db = psycopg2.connect(
+            database=os.environ.get('POSTGRES_DB'),
+            user=os.environ.get('POSTGRES_USER'),
+            password=os.environ.get('POSTGRES_PASSWORD'),
+            host=os.environ.get('HOST_NAME'),
+            port="5432",
+        )
+        db.autocommit = True
+        cur = db.cursor()
+        cur.execute("DELETE FROM api_scandevice WHERE room_id = %s", (room_id,))
+        cur.close()
+        db.close()
+    except psycopg2.OperationalError as e:
+        print(e)
+
+    current_time = int((datetime.datetime.now()).timestamp())
+
+    while int((datetime.datetime.now()).timestamp()) - current_time <= 300:
+        message_receive = _client.message_arrive()
+
+        if message_receive is None:
+            continue
+
+        data_receive = json.loads(message_receive)
+
+        if data_receive.get("operator") != "register":
+            continue
+
+        dev_info = data_receive.get("info", {})
+        # Hardware sends mac_address as an integer, store as string for the DB
+        mac_raw = dev_info.get("mac_address")
+        if mac_raw is None:
+            continue
+        mac = str(mac_raw)
+        node_function = dev_info.get("node_function", "sensor")
+
+        # Deterministic UUID from MAC so repeated announces don't duplicate
+        wifi_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, mac))
+
+        if ScanDevice.objects.filter(mac=mac, room_id=room_id).exists():
+            continue
+
+        try:
+            db = psycopg2.connect(
+                database=os.environ.get('POSTGRES_DB'),
+                user=os.environ.get('POSTGRES_USER'),
+                password=os.environ.get('POSTGRES_PASSWORD'),
+                host=os.environ.get('HOST_NAME'),
+                port="5432",
+            )
+            db.autocommit = True
+            cur = db.cursor()
+            query = """INSERT INTO api_scandevice
+                       (room_id, uuid, device_name, mac, address_type, oob_info, adv_type, bearer_type, rssi, remote_enable, remote_unicast)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                       ON CONFLICT (uuid) DO NOTHING"""
+            record = (
+                room_id,
+                wifi_uuid,
+                node_function,
+                mac,
+                -1, -1, -1,
+                "WiFi-MQTT",
+                -1,
+                -1, -1,
+            )
+            cur.execute(query, record)
+            print(f"WiFi device discovered: mac={mac} function={node_function}")
+            cur.close()
+            db.close()
+        except psycopg2.OperationalError as e:
+            print(e)
+
+    print("WiFi MQTT scan timeout")
+
+
+def SendAddNodeWifiMqtt(command: str):
+    """Publish register_ack directly to the device on farm/node/add (no gateway)."""
+
+    # Subscribe to add_device so we can publish on it
+    _client = ClientMQTT([add_device])
+    _client.connect(broker, port)
+    _client.loop_start()
+
+    action = 1 if command == "add" else 0
+
+    while NodeConfigurationBuffer.objects.filter(action=action).exists():
+
+        buf = NodeConfigurationBuffer.objects.filter(action=action).order_by("id").first()
+        node = RegistrationNode.objects.filter(room_id=buf.room_id, mac=buf.mac).first()
+
+        if action != 1:
+            return None
+
+        data = {
+            "operator": "register_ack",
+            "status": 1,
+            "info": {
+                # Hardware compares mac_address as integer, convert back
+                "mac_address": int(node.mac),
+                "room_id": int(buf.room_id),
+                "node_id": node.node_id,
+                "time": int(datetime.datetime.now().timestamp()) + 7 * 60 * 60,
+            }
+        }
+
+        result = _client.publish(add_device, json.dumps(data))
+        if result[0] != 0:
+            raise Exception("Can't publish register_ack to mqtt")
+
+        print(f"register_ack sent to mac={node.mac} node_id={node.node_id}")
+
+        # Firmware does not send an ack back — just mark as done
+        node.status = "sync"
+        node.save()
+        buf.delete()
+        ScanDevice.objects.filter(mac=node.mac).delete()
+        print(f"WiFi MQTT device mac={node.mac} registered as node_id={node.node_id}")
+
+    return None
+
+
 def SendSetUpActuatorToGateway(client: ClientMQTT, data: dict):
     
     client = ClientMQTT([set_actuator])
@@ -566,7 +696,7 @@ def SendSetUpActuatorToGateway(client: ClientMQTT, data: dict):
         if message_receive != None:
             data_receive = json.loads(message_receive)
 
-            if data_receive["operator"] == "actuator_control_ack":
+            if data_receive["operator"] == "actuator_control_ack": #phần cứng chưa đáp ứng được, sau này có thì bổ sung thêm vào gateway
 
                 if data_receive["status"] == 1:
                     break
