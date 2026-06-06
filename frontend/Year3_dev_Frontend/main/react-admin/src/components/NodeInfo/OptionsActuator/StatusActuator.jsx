@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import verify_and_get_data from "../../../function/fetchData";
 import { host } from "../../../App";
 import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions} from "@mui/material";
-import ThermostatIcon from '@mui/icons-material/Thermostat';
+import AirIcon from '@mui/icons-material/Air';
 import Header from "../../Header";
 import { accessToken } from "mapbox-gl";
 
 function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, selectFunction}) {
   const [speed, setSpeed] = useState(0);
+  const [mode, setMode] = useState("");
   const [open, setOpen] = useState(false);
 
   const url = idNode ? `http://${host}/api/actuator_status?room_id=${room_id}&node_id=${idNode}` : null;
@@ -46,10 +47,9 @@ function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, 
 
     if(response.status === 200){
       const data = await response.json()
-      if(data["state"] === 1 && data["current_value"] > 0){
-        setStatus(true);
-        setSpeed(data["current_value"])
-      }
+      setStatus(data["state"] === 1);
+      setSpeed(data["current_value"] ?? 0);
+      setMode(data["mode"] ?? "");
     }
     else{
         alert("Some error happened, try to reload page!");
@@ -74,11 +74,11 @@ function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, 
               height: '60px',
               borderRadius: '50%',
               border: "solid 2px",
-              backgroundColor: status === 0 ? 'red' : "green",
+              backgroundColor: !status ? 'red' : "green",
             }}
             onClick={()=>setOpen(true)}
           >
-            <h3>{status === 0 ? "Off" : "On"}</h3>
+            <h3>{!status ? "Off" : "On"}</h3>
           </Button>
         </Grid>
         <Dialog
@@ -114,8 +114,9 @@ function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, 
         </Dialog>
         <Grid item xs={6} sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <ThermostatIcon style={{ fontSize: '3rem' }} />
-            <Header title={`Temperature ${speed}\u00B0C`} fontSize="13px"/>
+            <AirIcon style={{ fontSize: '3rem' }} />
+            <Header title={`Fan speed: ${mode ? mode.toUpperCase() : "-"}`} fontSize="14px"/>
+            <Header title={`PWM: ${speed}`} fontSize="12px"/>
           </Box>
         </Grid>
       </Grid>
