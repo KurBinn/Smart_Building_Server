@@ -17,6 +17,7 @@ const ActuatorStatus = ({room_id, setActuatorStatus, callbackSetSignIn,
 {
     const [status, setStatus] = useState(null);
     const [speed, setSpeed] = useState(0);
+    const [mode, setMode] = useState("");
     const url = `http://${host}/api/actuator_status?room_id=${room_id}&node_id=${node_id}`;
     const url_set_command = `http://${host}/api/set_actuator`;
     const [isLoading, setIsLoading] = useState(true);
@@ -63,15 +64,19 @@ const ActuatorStatus = ({room_id, setActuatorStatus, callbackSetSignIn,
         }
         if(response.status == 200)
         {
-            if(data_response["Response"]["state"] === 1)
+            // The actuator_status endpoint returns the serialized record at the
+            // top level (state, current_value, mode, ...), not wrapped in a
+            // "Response" key.
+            setMode(data_response["mode"] ?? "");
+            if(data_response["state"] === 1)
             {
                 setStatus(1);
                 let newActuatorStatus = actuatorStatus;
                 newActuatorStatus[node_id] = 1;
                 setActuatorStatus(newActuatorStatus);
-                if(data_response["Response"]["current_value"] > 0)
+                if(data_response["current_value"] > 0)
                 {
-                    setSpeed(data_response["Response"]["current_value"]);
+                    setSpeed(data_response["current_value"]);
                 }
                 setIsLoading(false);
             }
@@ -403,7 +408,10 @@ const ActuatorStatus = ({room_id, setActuatorStatus, callbackSetSignIn,
                     disabled
                     // onKeyDown={preventHorizontalKeyboardNavigation}
                 />
-                <Header title={`Speed/Temperature: ${speed}`} fontSize="15px"/>
+                <Box display="flex" flexDirection="column">
+                    <Header title={`Fan speed: ${mode ? mode.toUpperCase() : "-"}`} fontSize="15px"/>
+                    <Header title={`PWM: ${speed}`} fontSize="13px"/>
+                </Box>
 
                 </Box>
             </Box>

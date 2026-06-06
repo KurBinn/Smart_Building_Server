@@ -22,7 +22,8 @@ class RegistrationNode(models.Model):
                                 to_field = 'room_id',
                                 verbose_name = ("Refering to id of room where this node is implemented"),
                                 on_delete = models.CASCADE,
-                                null = False,
+                                null = True,
+                                blank = True,
                                 db_column = "room_id",
                                 )
     node_id = models.BigIntegerField(null = True, unique = True, db_column = "node_id",)
@@ -98,7 +99,8 @@ class RawSensorMonitor(models.Model):
                                 to_field = 'room_id',
                                 verbose_name = ("Refering to id of room where this node is implemented"),
                                 on_delete = models.CASCADE,
-                                null = False,
+                                null = True,
+                                blank = True,
                                 db_column = "room_id",
                                 )
     node_id = models.IntegerField(null = False, db_column = "node_id",)

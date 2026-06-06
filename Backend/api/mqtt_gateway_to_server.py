@@ -14,9 +14,12 @@ _ONE_MINUTE = 60 * _ONE_SECOND
 _ONE_HOUR = 60 * _ONE_MINUTE
 
 backend_topic_dictionary = {
-                        "sensor_data": "farm/monitor/sensor",
-                        "actuator_data": "farm/monitor/actuator",
-                        "health_check": "farm/monitor/alive"
+                        "sensor_data":  "farm/monitor/sensor",
+                        "actuator_data":"farm/monitor/actuator",
+                        "health_check": "farm/monitor/alive",
+                        # WiFi things topics (direct from hardware via broker)
+                        "scan_device": "farm/node/scan",
+                        "keepalive_ack":   "farm/monitor/alive",
                         }
 
 broker = os.environ.get('SERVER_BROKER')
@@ -145,35 +148,54 @@ def DataFromSensorNode():
                     except psycopg2.OperationalError as e:
                         connect_to_database = None
                         print(e)
-                
+
                     connect_to_database.autocommit = True
                     cursor = connect_to_database.cursor()
-                    query = f"""INSERT INTO api_rawsensormonitor (room_id, node_id, co2, temp, hum, light,
-                                                                dust, sound, red, green, blue, tvoc, motion, time)
-                                VALUES (%s, %s, %s, %s ,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-                    dict_key = [
-                        "room_id",
-                        "node_id",
-                        "co2",
-                        "temp",
-                        "hum",
-                        "light",
-                        "dust",
-                        "sound",
-                        "red",
-                        "green",
-                        "blue",
-                        "tvoc",
-                        "motion",
-                        "time",
-                    ]
-                    record = ()
 
-                    for i in dict_key:
-                        if i in data_receive["info"]:
-                            record = record + (data_receive["info"][i], )
-                        else:
-                            record = record + (-1, )
+                    info = data_receive["info"]
+                    payload_room_id = info.get("room_id", 255)
+                    payload_node_id = info.get("node_id")
+
+                    # WiFi nodes send room_id=0 (pending assignment) or 255 (UNSUCCESSFUL_ID).
+                    # Resolve the real room from the registration table using node_id so we
+                    # never hit the FK constraint with an invalid value.
+                    if payload_room_id in (0, 255) and payload_node_id is not None:
+                        cursor.execute(
+                            "SELECT room_id FROM api_registrationnode WHERE node_id = %s",
+                            (payload_node_id,)
+                        )
+                        row = cursor.fetchone()
+                        resolved_room_id = row[0] if row else None
+                    else:
+                        resolved_room_id = payload_room_id  # BLE mesh: already a valid room
+
+                    query = """INSERT INTO api_rawsensormonitor
+                                   (room_id, node_id, co2, temp, hum, light,
+                                    dust, sound, red, green, blue, tvoc, motion, time)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                    # Firmware sends "temperature"/"humidity"/"dust_density"; BLE mesh gateway
+                    # sends "temp"/"hum"/"dust" — accept both.
+                    def _get(key, *aliases):
+                        for k in (key,) + aliases:
+                            if k in info:
+                                return info[k]
+                        return -1
+
+                    sensor_values = (
+                        _get("co2"),
+                        _get("temp", "temperature"),
+                        _get("hum",  "humidity"),
+                        _get("light"),
+                        _get("dust", "dust_density"),
+                        _get("sound"),
+                        _get("red"),
+                        _get("green"),
+                        _get("blue"),
+                        _get("tvoc"),
+                        _get("motion"),
+                    )
+                    record = (resolved_room_id, payload_node_id) + sensor_values + (int(time.time()),)
+
                     print(record)
                     cursor.execute(query, record)
                     print("Successfully insert RawSensorMonitor to PostgreSQL")
@@ -245,6 +267,8 @@ def DataFromActuator():
                 data_receive = json.loads(message_receive)
 
                 if data_receive["operator"] == "actuator_data":
+                    info = data_receive["info"]
+                    act  = info.get("actuator_data", {})
 
                     try:
                         connect_to_database = psycopg2.connect(
@@ -261,24 +285,17 @@ def DataFromActuator():
 
                     connect_to_database.autocommit = True
                     cursor = connect_to_database.cursor()
-                    query = f"""INSERT INTO api_rawactuatormonitor (room_id, node_id, function, current_value, state, mode, time)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-                    dict_key = [
-                        "room_id",
-                        "node_id",
-                        "function",
-                        "current_value",
-                        "state",
-                        "mode",
-                        "time",
-                    ]
-                    record = ()
-
-                    for i in dict_key:
-                        if i in data_receive["info"]:
-                            record = record + (data_receive["info"][i], )
-                        else:
-                            record = record + (-1, )
+                    query = """INSERT INTO api_rawactuatormonitor (room_id, node_id, function, current_value, state, mode, time)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                    record = (
+                        info.get("room_id", -1),
+                        info.get("node_id", -1),
+                        "fan",
+                        str(act.get("pwm", 0)),
+                        act.get("state", 0),
+                        act.get("fan_speed", "unknown"),
+                        info.get("time", int(time.time())),
+                    )
                     print(record)
                     cursor.execute(query, record)
                     print("Successfully insert RawActuatorMonitor to PostgreSQL")
@@ -333,12 +350,129 @@ def HealthCheckNode():
         except:
             print("Something was wrong while inserting to database !!!")
 
+# ── WiFi node registration ───────────────────────────────────────
+# Listens on farm/node/scan for 'register' messages from WiFi hardware.
+# Saves each new device to api_registrationnode so the server knows about it.
+# The gateway (gw2sv.py) also listens to this topic to send register_ack.
+def RegisterWiFiNode():
+
+    client = ClientMQTT([backend_topic_dictionary["scan_device"]],)
+    client.connect(broker, port)
+    client.loop_start()
+
+    while True:
+        try:
+            message_receive = client.message_arrive()
+
+            if message_receive is not None:
+                print(f"[WiFi] Received register `{message_receive}`")
+                data_receive = json.loads(message_receive)
+
+                if data_receive["operator"] == "register":
+                    info = data_receive["info"]
+
+                    try:
+                        connect_to_database = psycopg2.connect(
+                            database = os.environ.get('POSTGRES_DB'),
+                            user     = os.environ.get('POSTGRES_USER'),
+                            password = os.environ.get('POSTGRES_PASSWORD'),
+                            host     = os.environ.get('HOST_NAME'),
+                            port     = "5432",
+                        )
+                        print("Successfully connected to database in RegisterWiFiNode")
+                    except psycopg2.OperationalError as e:
+                        print(e)
+                        continue
+
+                    connect_to_database.autocommit = True
+                    cursor = connect_to_database.cursor()
+
+                    mac = info.get('mac_address')
+
+                    # Also fetch room_id so the ack reflects whatever the admin assigned.
+                    cursor.execute(
+                        "SELECT id, node_id, room_id FROM api_registrationnode WHERE mac = %s",
+                        (mac,)
+                    )
+                    existing = cursor.fetchone()
+
+                    if existing:
+                        row_id, row_node_id, row_room_id = existing
+
+                        # If node_id was never persisted or is out of uint8_t range, assign one now.
+                        if row_node_id is None or row_node_id > 254:
+                            cursor.execute(
+                                """SELECT COALESCE(MIN(s.i), 1)
+                                   FROM generate_series(1, 254) AS s(i)
+                                   WHERE s.i NOT IN (
+                                       SELECT node_id FROM api_registrationnode
+                                       WHERE node_id BETWEEN 1 AND 254
+                                   )"""
+                            )
+                            row_node_id = cursor.fetchone()[0]
+                            cursor.execute(
+                                "UPDATE api_registrationnode SET node_id = %s WHERE id = %s",
+                                (row_node_id, row_id)
+                            )
+
+                        assigned_node_id = row_node_id
+                        ack_room_id = row_room_id if row_room_id is not None else 0
+                        print(f"[WiFi] Re-registration mac={mac} node_id={assigned_node_id} room_id={ack_room_id}")
+                    else:
+                        # New device: find the lowest free node_id in 1-254 (firmware uint8_t limit).
+                        cursor.execute(
+                            """SELECT COALESCE(MIN(s.i), 1)
+                               FROM generate_series(1, 254) AS s(i)
+                               WHERE s.i NOT IN (
+                                   SELECT node_id FROM api_registrationnode
+                                   WHERE node_id BETWEEN 1 AND 254
+                               )"""
+                        )
+                        assigned_node_id = cursor.fetchone()[0]
+                        cursor.execute(
+                            """INSERT INTO api_registrationnode
+                                   (room_id, node_id, mac, status, time, x_axis, y_axis, z_axis, function)
+                               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                            (None, assigned_node_id, mac, 'sync', int(time.time()), 1, 1, 1,
+                             info.get('node_function', 'None'))
+                        )
+                        ack_room_id = 0  # no room yet; admin assigns later via the web UI
+                        print(f"[WiFi] Registered new node mac={mac} node_id={assigned_node_id}")
+
+                    cursor.close()
+                    connect_to_database.close()
+
+                    # Publish register_ack on farm/node/add.
+                    # Firmware exits its registration loop once it receives this and sets
+                    # its internal node_id / room_id to the values we send here.
+                    ack = {
+                        'operator': 'register_ack',
+                        'status': 1,
+                        'info': {
+                            'mac_address': mac,
+                            'node_id': assigned_node_id,
+                            'room_id': ack_room_id,
+                            'time': int(time.time()),
+                        }
+                    }
+                    client.publish('farm/node/add', json.dumps(ack))
+                    print(f"[WiFi] register_ack → node_id={assigned_node_id} room_id={ack_room_id} mac={mac}")
+
+        except json.JSONDecodeError:
+            print("[WiFi] RegisterWiFiNode: invalid JSON received")
+        except psycopg2.Error as e:
+            print(f"[WiFi] RegisterWiFiNode DB error: {e}")
+        except Exception as e:
+            print(f"[WiFi] RegisterWiFiNode error: {e}")
+# ─────────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
     process_list = []
     process_list.append(multiprocessing.Process(target = DataFromSensorNode))
     process_list.append(multiprocessing.Process(target = DataFromActuator))
     process_list.append(multiprocessing.Process(target = DataForAqiRef))
     process_list.append(multiprocessing.Process(target = HealthCheckNode))
+    process_list.append(multiprocessing.Process(target = RegisterWiFiNode))  # WiFi node registration
 
     for i in process_list:
         i.start()
