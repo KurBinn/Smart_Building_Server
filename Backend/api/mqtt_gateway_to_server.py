@@ -7,6 +7,11 @@ import os
 from dotenv import load_dotenv
 from mqtt_class import ClientMQTT
 
+try:
+    from csv_recorder import append_actuator_record, append_sensor_record
+except ImportError:
+    from .csv_recorder import append_actuator_record, append_sensor_record
+
 load_dotenv()
 
 _ONE_SECOND = 1
@@ -271,6 +276,25 @@ def DataFromSensorNode():
                     print(record)
                     cursor.execute(query, record)
                     print("Successfully insert RawSensorMonitor to PostgreSQL")
+                    append_sensor_record(
+                        {
+                            "time": server_received_time,
+                            "room_id": resolved_room_id,
+                            "node_id": payload_node_id,
+                            "co2": sensor_values[0],
+                            "temp": sensor_values[1],
+                            "hum": sensor_values[2],
+                            "light": sensor_values[3],
+                            "dust": sensor_values[4],
+                            "sound": sensor_values[5],
+                            "red": sensor_values[6],
+                            "green": sensor_values[7],
+                            "blue": sensor_values[8],
+                            "tvoc": sensor_values[9],
+                            "motion": sensor_values[10],
+                        }
+                    )
+                    print("Successfully append sensor_data.csv")
 
                     if "state" in info or "pwm" in info:
                         actuator_query = """INSERT INTO api_rawactuatormonitor
@@ -288,6 +312,18 @@ def DataFromSensorNode():
                         print(actuator_record)
                         cursor.execute(actuator_query, actuator_record)
                         print("Successfully insert RawActuatorMonitor from sensor_data to PostgreSQL")
+                        append_actuator_record(
+                            {
+                                "time": server_received_time,
+                                "room_id": resolved_room_id,
+                                "node_id": payload_node_id,
+                                "function": actuator_record[2],
+                                "current_value": actuator_record[3],
+                                "state": actuator_record[4],
+                                "mode": actuator_record[5],
+                            }
+                        )
+                        print("Successfully append actuator_data.csv from sensor_data")
 
                     cursor.close()
                     connect_to_database.close()
@@ -397,6 +433,18 @@ def DataFromActuator():
                     print(record)
                     cursor.execute(query, record)
                     print("Successfully insert RawActuatorMonitor to PostgreSQL")
+                    append_actuator_record(
+                        {
+                            "time": server_received_time,
+                            "room_id": record[0],
+                            "node_id": record[1],
+                            "function": record[2],
+                            "current_value": record[3],
+                            "state": record[4],
+                            "mode": record[5],
+                        }
+                    )
+                    print("Successfully append actuator_data.csv")
                     cursor.close()
                     connect_to_database.close()
                 else:

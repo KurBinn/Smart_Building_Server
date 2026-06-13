@@ -4,6 +4,8 @@ import threading
 import time
 import paho.mqtt.client as mqtt
 
+from .csv_recorder import append_actuator_record
+
 ACTUATOR_DATA_TOPIC = "farm/monitor/actuator"
 
 
@@ -51,6 +53,17 @@ def _on_message(client, userdata, msg):
         state=state,
         mode=fan_speed,
         time=timestamp,
+    )
+    append_actuator_record(
+        {
+            "time": timestamp,
+            "room_id": room_id_val,
+            "node_id": node_id,
+            "function": act.get("function", info.get("actuator_function", "fan")),
+            "current_value": str(pwm),
+            "state": state,
+            "mode": fan_speed,
+        }
     )
     print(
         f"[MQTT Sub] Saved fan status: node={node_id} "
