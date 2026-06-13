@@ -1,5 +1,5 @@
 import { createContext, useState, useMemo } from "react";
-import { createTheme, useColorScheme } from "@mui/material/styles";
+import { createTheme } from "@mui/material/styles";
 
 // color design tokens export
 export const tokens = (mode) => ({
@@ -176,10 +176,12 @@ export const themeSettings = (mode) => {
         ? {
             // palette values for dark mode
             primary: {
-              main: colors.primary[500],
+              main: "#38bdf8",
+              contrastText: "#07111f",
             },
             secondary: {
-              main: colors.greenAccent[500],
+              main: "#4cceac",
+              contrastText: "#061812",
             },
             neutral: {
               dark: colors.grey[700],
@@ -187,14 +189,24 @@ export const themeSettings = (mode) => {
               light: colors.grey[100],
             },
             background: {
-              default: colors.blackColor[700],
-              paper: colors.blackColor[500],
+              default: "#101418",
+              paper: "#1a222c",
+            },
+            text: {
+              primary: "#f4f7fb",
+              secondary: "#b8c2cc",
+            },
+            divider: "rgba(226, 232, 240, 0.18)",
+            action: {
+              hover: "rgba(56, 189, 248, 0.12)",
+              selected: "rgba(56, 189, 248, 0.18)",
             },
           }
         : {
             // palette values for light mode
             primary: {
               main: colors.primary[100],
+              contrastText: "#ffffff",
             },
             secondary: {
               main: colors.greenAccent[500],
@@ -208,7 +220,43 @@ export const themeSettings = (mode) => {
               default: colors.whiteColor[600],
               paper: colors.whiteColor[700],
             },
+            text: {
+              primary: colors.grey[100],
+              secondary: colors.grey[300],
+            },
+            divider: "rgba(20, 20, 20, 0.16)",
           }),
+    },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: mode === "dark" ? "#101418" : colors.whiteColor[600],
+            color: mode === "dark" ? "#f4f7fb" : colors.grey[100],
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+          },
+        },
+      },
+      MuiMenu: {
+        styleOverrides: {
+          paper: {
+            border: `1px solid ${mode === "dark" ? "rgba(226, 232, 240, 0.16)" : "rgba(20, 20, 20, 0.12)"}`,
+          },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          outlined: {
+            borderColor: mode === "dark" ? "rgba(244, 247, 251, 0.45)" : "rgba(20, 20, 20, 0.35)",
+          },
+        },
+      },
     },
     typography: {
       fontFamily: ["Source Sans Pro", "sans-serif"].join(","),
@@ -245,18 +293,27 @@ export const themeSettings = (mode) => {
 
 // context for color mode, don't know how the hell this work
 export const ColorModeContext = createContext({
-  toggleColorMode: () => {},  //this line is unnecessary
+  mode: "light",
+  toggleColorMode: () => {},
 });
   
 export const useMode = () => {
-  const [mode, setMode] = useState("light");
+  const [mode, setMode] = useState(() => {
+    const savedMode = localStorage.getItem("themeMode");
+    return savedMode === "dark" ? "dark" : "light";
+  });
 
   const colorMode = useMemo(
     () => ({
+      mode,
       toggleColorMode: () =>
-        setMode((prev) => (prev === "light" ? "dark" : "light")),
+        setMode((prev) => {
+          const nextMode = prev === "light" ? "dark" : "light";
+          localStorage.setItem("themeMode", nextMode);
+          return nextMode;
+        }),
     }),
-    []
+    [mode]
   );
 
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);

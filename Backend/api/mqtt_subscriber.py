@@ -26,10 +26,8 @@ def _on_message(client, userdata, msg):
         return
 
     info = data.get("info", {})
-    act = info.get("actuator_data", {})
-    fan_speed = act.get("fan_speed")
-    if not fan_speed:
-        return
+    act = info.get("actuator_data") or info
+    fan_speed = act.get("fan_speed", act.get("mode", "unknown"))
 
     # Django ORM is safe to use from a background thread after setup is done.
     from .models import RawActuatorMonitor, Room
@@ -37,8 +35,8 @@ def _on_message(client, userdata, msg):
     node_id = info.get("node_id")
     room_id_val = info.get("room_id")
     pwm = act.get("pwm", 0)
-    state = act.get("state", 0)
-    timestamp = info.get("time") or int(time.time())
+    state = act.get("state", act.get("status", 0))
+    timestamp = int(time.time())
 
     room = Room.objects.filter(room_id=room_id_val).first()
     if room is None:
@@ -48,13 +46,17 @@ def _on_message(client, userdata, msg):
     RawActuatorMonitor.objects.create(
         room_id=room,
         node_id=node_id,
-        function="fan",
+        function=act.get("function", info.get("actuator_function", "fan")),
         current_value=str(pwm),
         state=state,
         mode=fan_speed,
         time=timestamp,
     )
-    print(f"[MQTT Sub] Saved fan status: node={node_id} speed={fan_speed} pwm={pwm}")
+    print(
+        f"[MQTT Sub] Saved fan status: node={node_id} "
+        f"state={state} speed={fan_speed} pwm={pwm} "
+        f"server_received_time={timestamp}"
+    )
 
 
 def start_mqtt_subscriber():

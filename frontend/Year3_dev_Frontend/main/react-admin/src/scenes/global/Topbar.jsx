@@ -1,6 +1,6 @@
 import { Box, IconButton, useTheme, Typography, Menu, MenuItem, Button } from "@mui/material";
-import { useState } from "react";
-import { ColorModeContext, tokens } from "../../theme";
+import { useContext, useState } from "react";
+import { ColorModeContext } from "../../theme";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import { Link } from "react-router-dom";
@@ -8,7 +8,6 @@ import ContrastIcon from '@mui/icons-material/Contrast';
 import HomeIcon from '@mui/icons-material/Home';
 import SettingsIcon from '@mui/icons-material/Settings';
 import logo from '../../assets/logo_lab.png'
-import { useMode } from "../../theme";
 import { host } from "../../App";
 import { useTranslation } from "react-i18next";
 import  "../../utils/i18n";
@@ -18,7 +17,7 @@ const Topbar = ({setIsSignin}) => {
   const [isHovered2, setIsHovered2] = useState(false);
   const [openMenu, setOpenMenu] = useState(null);
   const theme = useTheme();
-  const [, colorMode] = useMode();
+  const colorMode = useContext(ColorModeContext);
 	const backend_host = host;
 	const {t, i18n} = useTranslation()
 	const changeLanguage = (lng) => {
@@ -114,7 +113,7 @@ const Topbar = ({setIsSignin}) => {
 		<Box display="flex">
 				<Box display="flex" alignItems="center"> {/* Wrap the icon and text in a Box component */}
 					<IconButton
-						aria-control='profile-menu'
+						aria-controls='profile-menu'
 						onClick={e => setOpenMenu(e.currentTarget)}
 					>
 						<PersonOutlinedIcon style={{ fill: 'white' }}/>
@@ -155,7 +154,7 @@ const Topbar = ({setIsSignin}) => {
 						>
 							<ContrastIcon /> 
 							<Typography component='span' pl={2}>
-							{t("theme")}
+							{`${t("theme")} (${colorMode.mode === "dark" ? "Dark" : "Light"})`}
 							</Typography>
 						</MenuItem>
 						<div style={{

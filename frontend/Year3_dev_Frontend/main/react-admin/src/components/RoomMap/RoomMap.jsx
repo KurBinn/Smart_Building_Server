@@ -91,7 +91,13 @@ const RoomMap = ({room_id, callbackSetSignIn}) =>
             const {boxWidth, boxHeigth, currentImageWidth, currentImageHeigth} = size_object;
             const {x_length, y_length} = data_response["room_size"];
             let node_array_to_iterate = []
-            node_array_to_iterate = data_response["node_info"]["sensor"].concat(data_response["node_info"]["actuator"])
+            const nodeById = new Map();
+            data_response["node_info"]["sensor"]
+                .concat(data_response["node_info"]["actuator"])
+                .forEach((node) => {
+                    nodeById.set(node["node_id"], node);
+                });
+            node_array_to_iterate = Array.from(nodeById.values());
             let new_nodePosition = [];
             node_array_to_iterate.forEach(node => {
                 // [{"node_id": ..., "function": ..., "node_left": "...%", "node_above": "...%"}, ...]

@@ -11,16 +11,10 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
     const [maxYAxis, setMaxYAxis] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const theme = useTheme();
-    const [energyData, setEnergyData] = useState({'time': [], 'active_energy': []});
+    const [energyData, setEnergyData] = useState(null);
     const [powerData, setPowerData] = useState({
-        'hour': [
-            "1 am", "2 am", "3 am", "4 am", "5 am", "6 am", "7 am", "8 am", "9 am", "10 am", "11 am", "12 am",
-            "1 pm", "2 pm", "3 pm", "4 pm", "5 pm", "6 pm", "7 pm", "8 pm", "9 pm", "10 pm", "11 pm", "12 pm",
-        ],
-        'active_power': [
-            458, 512, 367, 782, 644, 734, 896, 921, 875, 699, 543, 456,
-            789, 643, 765, 943, 732, 512, 684, 876, 921, 764, 598, 421
-        ]
+        'time': [],
+        'active_power': []
     })
     const months = [
         'Jan', 'Feb','Mar', 'Apr', 'May', 'Jun',
@@ -50,22 +44,39 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
         if(response.status === 200)
         {
             const data = await response.json();
-            const startYear = data[0][0].split('_')[1];
-            const endYear = data[0][data[0].length - 1].split('_')[1];
+            if (!Array.isArray(data) || !Array.isArray(data[0]) || data[0].length === 0) {
+                setEnergyData({ time: ["No data"], active_energy: [0] });
+                setPowerData({ time: ["No data"], active_power: [0] });
+                setIsLoading(false);
+                return;
+            }
+            const startYear = Number(data[0][0].split('_')[1]);
+            const endYear = Number(data[0][data[0].length - 1].split('_')[1]);
             let count = 0;
+            const newPowerData = {
+                time: [],
+                active_power: []
+            };
             
             for (let year = startYear; year <= endYear; year++) {
                 for (let month = 0; month < 12; month++) {
                     let check_month = `${month+1}_${year}`
                     if (check_month === data[0][count]) {
                         newEnergyData.active_energy.push(data[1][count]);
+                        newPowerData.active_power.push(data[2]?.[count] ?? 0);
                         count++;
                     }
-                    else newEnergyData.active_energy.push(0);
-                    newEnergyData.time.push(`${months[month]} ${year}`)
+                    else {
+                        newEnergyData.active_energy.push(0);
+                        newPowerData.active_power.push(0);
+                    }
+                    const label = `${months[month]} ${year}`;
+                    newEnergyData.time.push(label);
+                    newPowerData.time.push(label);
                 }
             }
             setEnergyData(newEnergyData);
+            setPowerData(newPowerData);
             setIsLoading(false)
         }
         else
@@ -73,6 +84,8 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
             newEnergyData['time'].push(0);
             newEnergyData['active_energy'].push(0);
             setEnergyData(newEnergyData);
+            setPowerData({ time: [0], active_power: [0] });
+            setIsLoading(false);
         }
     }
 
@@ -84,7 +97,7 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
             label = 'Power';
             unit = 'kW'
         } else  {
-            data = energyData;
+            data = energyData ?? { time: [], active_energy: [] };
             label = 'Energy';
             unit = 'kWh'
         }
@@ -98,7 +111,7 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
                 label:`${data[keys[0]][i]}\n${label}: ${data[keys[1]][i]}${unit}`
             });
         }
-        setMaxYAxis(Math.max(...data[keys[1]]))
+        setMaxYAxis(Math.max(...data[keys[1]], 1))
         setChartData(result);
     }
 
@@ -111,7 +124,9 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
     ]
 
     useEffect(() => {
-        getChartData(dataType);
+        if (energyData !== null) {
+            getChartData(dataType);
+        }
         if(time_delay !== 0)
         {
             if(energyData === null)            //!< this is for the total component always render the first time and then the next time will be setTimeOut
@@ -130,14 +145,14 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
         {
             verify_and_get_data(get_energy_data, callbackSetSignIn, backend_host, url_energy); 
         }
-    },[energyData, isLoading, dataType])
+    },[energyData, dataType])
 
     return (
         <Grid container textAlign='center' justifyContent='center'>
                 <Grid container display='flex' flexDirection='column' justifyContent='center' xs={12} marginY={1}>
                     <Grid item>
                         <Typography component='span' textAlign='center' fontSize='20px'>
-                            {dataType ? 'Average active power' : t("titleenergy")}
+                            Average Active Power
                         </Typography>
                     </Grid>
                     <Grid item marginX={4}>
@@ -205,7 +220,7 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
                     theme={VictoryTheme.material}
                     height={100}
                     padding={{left: 20, right: 20, bottom: 12}}
-                    domain={maxYAxis}
+                    domain={{ y: [0, maxYAxis || 1] }}
                 >
                     <VictoryAxis  
                         fixLabelOverlap={true}  
@@ -304,7 +319,7 @@ const EnergyChart = ({room_id, callbackSetSignIn, time_delay, backend_host}) => 
                         alignment="start"
                         style={{ data: { fill: "#c43a31"} }}
                         data={chartData}
-                        barWidth={300 / chartData.length}
+                        barWidth={chartData.length > 0 ? Math.max(4, 300 / chartData.length) : 10}
                         events={[{
                         target: "data",
                         eventHandlers: {

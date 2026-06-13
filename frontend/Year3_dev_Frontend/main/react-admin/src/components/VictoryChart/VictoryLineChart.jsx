@@ -20,12 +20,14 @@ const VictoryLineChart = ({data_x, data_y, option_data, parameter_type}) =>
     // console.log(data_y)
     // console.log(option_data)
     // console.log(parameter_type)
+    const safeDataX = Array.isArray(data_x) && data_x.length > 0 ? data_x : [0];
+    const safeDataY = Array.isArray(data_y) && data_y.length > 0 ? data_y : [0];
     let data = [];
     let label_x;
     // bo phan optiondata di
     if(option_data === "now")
     {
-        label_x = data_x.map((t)=>{
+        label_x = safeDataX.map((t)=>{
             let unixTimestamp = t;
             let date = new Date(unixTimestamp * 1000);
             return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}-\n${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`; 
@@ -33,17 +35,17 @@ const VictoryLineChart = ({data_x, data_y, option_data, parameter_type}) =>
     }
     else
     {
-        label_x = data_x;
+        label_x = safeDataX;
     }
 
-    for(let i=0; i<data_x.length; ++i) {
-        data.push({x: label_x[i], y: data_y[i]});
+    for(let i=0; i<safeDataX.length; ++i) {
+        data.push({x: label_x[i], y: safeDataY[i] ?? 0});
     }
     
     let label_y = [];
     let value_y = [];
 
-    for(let i=0; i<=Math.round((Math.max(...data_y))+5)/5; ++i) {
+    for(let i=0; i<=Math.round((Math.max(...safeDataY))+5)/5; ++i) {
         value_y.push(i*5);
         label_y.push(i*5);
     }
@@ -77,7 +79,7 @@ const VictoryLineChart = ({data_x, data_y, option_data, parameter_type}) =>
             theme={VictoryTheme.material}
             height={100}
             padding={{left: 20, right: 20, bottom: 12}}
-            domain={Math.max(data_y) + 1}
+            domain={{ y: [0, Math.max(...safeDataY, 1) + 1] }}
             // containerComponent={
             //     <VictoryZoomContainer
             //         // minZoom={{y: Math.min(...data_y) - 1}} // Minimum zoom level

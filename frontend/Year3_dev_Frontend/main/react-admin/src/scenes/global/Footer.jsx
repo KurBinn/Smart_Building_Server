@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createTheme, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -29,21 +29,24 @@ function Copyright(props) {
     );
 }
 
+const MAP_COORDINATE = [105.8431, 21.0054];
+const MARKER_INFO = '<h3>Hanoi University of Science and Technology</h3><h4>IPAC, C5-102, HUST</h4>';
+
 const MapboxMap = () => {
+  const theme = useTheme();
   mapboxgl.accessToken = 'pk.eyJ1IjoicXVhbmdhbmgwMTEwIiwiYSI6ImNsdTVzcDd1YTFxZDUyamw4a3Eyd3kzeHgifQ.Cjd2-WvzHRTbBvLTQww1ew';
-  const COORDINATE = [105.8431, 21.0054];
-  const MARKER_INFO = '<h3>Hanoi University of Science and Technology</h3><h4>IPAC, C5-102, HUST</h4>';
+  const mapStyle = theme.palette.mode === "dark" ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/streets-v11';
 
   useEffect(() => { 
     const map = new mapboxgl.Map({
       container: 'map-container',
-      style: 'mapbox://styles/mapbox/streets-v11',
-      center: COORDINATE, // Example coordinates
+      style: mapStyle,
+      center: MAP_COORDINATE, // Example coordinates
       zoom: 17,
     });
 
     const marker = new mapboxgl.Marker()
-      .setLngLat(COORDINATE)
+      .setLngLat(MAP_COORDINATE)
       .addTo(map);
 
     const popup = new mapboxgl.Popup({ 
@@ -58,7 +61,7 @@ const MapboxMap = () => {
 
     // Clean up
     return () => map.remove();
-  }, []);
+  }, [mapStyle]);
 
   return <div id="map-container" style={{ width: '200%', height: '250px', borderRadius: '10px' }} />;
 };

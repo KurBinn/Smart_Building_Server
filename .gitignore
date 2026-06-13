@@ -1,7 +1,28 @@
 media/
-# Environments
-.env
 
-# Python Cache
+# Environments and local secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Python
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+exported_csv/
+db.sqlite3
+*.sqlite3
+
+# Frontend
+node_modules/
+build/
+dist/
+coverage/
+
+# Logs
+*.log

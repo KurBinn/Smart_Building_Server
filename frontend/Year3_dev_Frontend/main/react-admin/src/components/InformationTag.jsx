@@ -67,7 +67,7 @@ const InformationTag = ({url, callbackSetSignIn, time_delay, room_id, setActuato
         "hum": {"name":"Humidity", "icon":iconMap["hum"], "unit":"%"}, 
         "co2": {"name":"Co2", "icon":iconMap["co2"], "unit":"ppm"}, 
         "tvoc": {"name":"TVOC","icon":iconMap["tvoc"], "unit":"µg/m3"},
-        "dust": {"name": "Dust", "icon":iconMap["dust"], "unit": "µm"},
+        "dust": {"name": "Dust", "icon":iconMap["dust"], "unit": "mg/m3"},
         "sound": {"name": "Sound", "icon":iconMap["sound"], "unit": "dB"},
         "light": {"name": "Light", "icon":iconMap["light"], "unit": "lux"},
         "motion": {"name": "Motion Detection", "icon":iconMap["motion"], "unit": ""},

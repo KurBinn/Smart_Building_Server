@@ -56,9 +56,25 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
         }
     }
 
+    const formatValue = (value) => (
+      Number.isFinite(value) ? value : "NaN"
+    );
+
     const average_data = ((dataSensors, sensors) => {
 
       const data = {
+        co2: NaN,
+        temp: NaN,
+        hum: NaN,
+        light: NaN,
+        dust: NaN,
+        sound: NaN,
+        tvoc: NaN,
+        motion: NaN,
+        time: 0,
+      }
+
+      const sum = {
         co2: 0,
         temp: 0,
         hum: 0,
@@ -67,33 +83,39 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
         sound: 0,
         tvoc: 0,
         motion: 0,
-        time: 0,
+      }
+      const count = {
+        co2: 0,
+        temp: 0,
+        hum: 0,
+        light: 0,
+        dust: 0,
+        sound: 0,
+        tvoc: 0,
+        motion: 0,
       }
 
-      let count = 0
-
+      const getNodeId = (node) => node.node_id ?? node.id
       for(let i = 0; i < dataSensors.length; i++){
-        const check = sensors.some((node) => node.id === dataSensors[i].node_id )
+        const check = sensors.some((node) => Number(getNodeId(node)) === Number(dataSensors[i].node_id))
         if(check){
-          for (const key in data){
-            if(dataSensors[i][key] !== undefined && dataSensors[i][key] !== null){
-              if(key !== "time"){
-                data[key] += dataSensors[i][key]
-              } else{
-                data[key] = Math.max(data[key], dataSensors[i][key])
-              }
+          for (const key in sum){
+            const value = Number(dataSensors[i][key])
+            if(Number.isFinite(value) && value >= 0){
+              sum[key] += value
+              count[key] += 1
             }
           }
-          count++;
+          const time = Number(dataSensors[i].time)
+          if(Number.isFinite(time) && time > 0){
+            data.time = Math.max(data.time, time)
+          }
         }
       }
 
-      if (count > 0) {
-        for (const key in data) {
-          if(key !== "time"){
-            data[key] = (data[key] / count).toFixed(1)
-            data[key] = parseFloat(data[key])
-        }
+      for (const key in sum) {
+        if(count[key] > 0){
+          data[key] = parseFloat((sum[key] / count[key]).toFixed(1))
         }
       }
       return data
@@ -109,31 +131,33 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
     verify_and_get_data(getRawDataSensors, callbackSetSignIn, backend_host, api);
     const timer = setInterval(() => {
         verify_and_get_data(getRawDataSensors, callbackSetSignIn, backend_host, api);
-    }, 5000);
+    }, 30000);
     return () => clearInterval(timer);
-    },[])
+    },[api, backend_host, callbackSetSignIn])
   
   return (
-    <Grid container item textAlign='center' paddingTop={preferMd ? 0 : 0.5} justifyContent='center'>
-        <Grid item container xs={12} sm={12} md={12} textAlign="center" justifyContent='center' my={0.25} mb={3}>
-          <Typography variant="h3" sx={{fontWeight: "bold"}}> Average Data Sensor Node </Typography>
+    <Grid container item textAlign='center' paddingTop={preferMd ? 0 : 0.5} justifyContent='center'
+      sx={{ border: "1px solid black", borderRadius: "15px", p: 0.75, backgroundColor: theme.palette.background.paper }}
+    >
+        <Grid item container xs={12} sm={12} md={12} textAlign="center" justifyContent='center' my={0.25} mb={1}>
+          <Typography sx={{fontWeight: "bold", fontSize: "20px"}}> Average Data Sensor Node </Typography>
         </Grid>
-        <Box  sx={{ border: "1px solid black", borderRadius: '15px',p:1}}>
-          <Grid item container spacing={1} px='10px' marginBottom={0.5} justifyContent='center'>
+        <Box sx={{ width: "100%" }}>
+          <Grid item container spacing={0.5} px='4px' marginBottom={0.25} justifyContent='center'>
               { Object.entries(averageSensorNode).map(([key, value], index, array) => {
                   const IconComponent = iconMap[key] || LensBlurIcon;
                   if (index === array.length - 1) return (
                     <Grid item xs={4}>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxShadow: 0 }}>
-                    <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px'}} sx={{ boxShadow: "0px 0px 0px 0px", border: `none`}}>
-                        <IconComponent style={{ fontSize: '3rem' }} />
+                    <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '6px'}} sx={{ boxShadow: "0px 0px 0px 0px", border: `none`}}>
+                        <IconComponent style={{ fontSize: '2.25rem' }} />
                         <Grid container display="flex" flexDirection="column" justifyItems='center' textAlign='center'>
                             <Grid container item justifyContent='center' alignContent='center'>
-                                <Typography variant='h5'>Number Node</Typography>
+                                <Typography sx={{ fontSize: "13px" }}>Number Node</Typography>
                             </Grid>
                             <Grid item>
-                                <Typography variant='h3' fontWeight='bold'>
+                                <Typography sx={{ fontSize: "22px", fontWeight: "bold" }}>
                                     {sensors.length}
                                 </Typography>
                             </Grid>
@@ -144,15 +168,15 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
                   else return (
                     <Grid item xs={4}>
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxShadow: 0 }}>
-                    <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px'}} sx={{ boxShadow: "0px 0px 0px 0px", border:"none"}}>
-                        <IconComponent style={{ fontSize: '3rem' }} />
+                    <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '6px'}} sx={{ boxShadow: "0px 0px 0px 0px", border:"none"}}>
+                        <IconComponent style={{ fontSize: '2.25rem' }} />
                         <Grid container display="flex" flexDirection="column" justifyItems='center' textAlign='center'>
                             <Grid container item justifyContent='center' alignContent='center'>
-                                <Typography variant='h5'>{key}</Typography>
+                                <Typography sx={{ fontSize: "13px" }}>{key}</Typography>
                             </Grid>
                             <Grid item>
-                                <Typography variant='h3' fontWeight='bold'>
-                                    {value >0 ? value : 0}
+                                <Typography sx={{ fontSize: "22px", fontWeight: "bold" }}>
+                                    {formatValue(value)}
                                 </Typography>
                             </Grid>
                         </Grid>
@@ -163,7 +187,7 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
               })}
           </Grid>
           <Grid textAlign='center' spacing={1} marginY={1}>
-              <Typography textAlign='center' variant='h5'>updated on {
+              <Typography textAlign='center' sx={{ fontSize: "13px" }}>updated on {
                                       (()=>{
                                           const new_time = averageSensorNode["time"]
                                           const utcDate = new Date(new_time * 1000)

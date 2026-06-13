@@ -24,6 +24,75 @@ backend_topic_dictionary = {
 
 broker = os.environ.get('SERVER_BROKER')
 port = 1883
+UNASSIGNED_WIFI_ROOM_IDS = {0, 255}
+DEFAULT_WIFI_ROOM_ID = os.environ.get("DEFAULT_WIFI_ROOM_ID", "407")
+
+def _to_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+def _room_exists(cursor, room_id):
+    room_id = _to_int(room_id)
+    if room_id is None:
+        return False
+
+    cursor.execute("SELECT 1 FROM api_room WHERE room_id = %s LIMIT 1", (room_id,))
+    return cursor.fetchone() is not None
+
+def _resolve_wifi_room_id(cursor, mac, payload_room_id=None):
+    payload_room_id = _to_int(payload_room_id)
+    if (
+        payload_room_id is not None
+        and payload_room_id not in UNASSIGNED_WIFI_ROOM_IDS
+        and _room_exists(cursor, payload_room_id)
+    ):
+        return payload_room_id
+
+    cursor.execute(
+        """SELECT room_id FROM api_registrationnode
+           WHERE mac = %s AND room_id IS NOT NULL
+           ORDER BY id DESC LIMIT 1""",
+        (mac,),
+    )
+    row = cursor.fetchone()
+    if row and _room_exists(cursor, row[0]):
+        return row[0]
+
+    cursor.execute(
+        """SELECT room_id FROM api_nodeconfigurationbuffer
+           WHERE mac = %s AND action = 1
+           ORDER BY id DESC LIMIT 1""",
+        (mac,),
+    )
+    row = cursor.fetchone()
+    if row and _room_exists(cursor, row[0]):
+        return row[0]
+
+    cursor.execute(
+        """SELECT room_id FROM api_scandevice
+           WHERE mac = %s
+           ORDER BY id DESC LIMIT 1""",
+        (mac,),
+    )
+    row = cursor.fetchone()
+    if row and _room_exists(cursor, row[0]):
+        return row[0]
+
+    default_room_id = _to_int(DEFAULT_WIFI_ROOM_ID)
+    if _room_exists(cursor, default_room_id):
+        return default_room_id
+
+    cursor.execute("SELECT room_id FROM api_room ORDER BY id LIMIT 2")
+    rooms = cursor.fetchall()
+    if len(rooms) == 1:
+        return rooms[0][0]
+
+    return None
+
+def _print_received_topic(topic):
+    print(f"Received message from topic `{topic}`")
 
 def DataForAqiRef():
 
@@ -131,10 +200,12 @@ def DataFromSensorNode():
             message_receive = client.message_arrive()
 
             if message_receive != None:
+                _print_received_topic(backend_topic_dictionary["sensor_data"])
                 print(f"Received `{message_receive}`")
                 data_receive = json.loads(message_receive)
 
                 if data_receive["operator"] == "sensor_data":
+                    server_received_time = int(time.time())
 
                     try:
                         connect_to_database = psycopg2.connect(
@@ -194,11 +265,30 @@ def DataFromSensorNode():
                         _get("tvoc"),
                         _get("motion"),
                     )
-                    record = (resolved_room_id, payload_node_id) + sensor_values + (int(time.time()),)
+                    record = (resolved_room_id, payload_node_id) + sensor_values + (server_received_time,)
 
+                    print(f"[Sensor] server_received_time={server_received_time}")
                     print(record)
                     cursor.execute(query, record)
                     print("Successfully insert RawSensorMonitor to PostgreSQL")
+
+                    if "state" in info or "pwm" in info:
+                        actuator_query = """INSERT INTO api_rawactuatormonitor
+                                               (room_id, node_id, function, current_value, state, mode, time)
+                                           VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                        actuator_record = (
+                            resolved_room_id,
+                            payload_node_id,
+                            info.get("actuator_function", "fan"),
+                            str(info.get("pwm", 0)),
+                            info.get("state", info.get("status", 0)),
+                            info.get("mode", info.get("fan_speed", "manual")),
+                            server_received_time,
+                        )
+                        print(actuator_record)
+                        cursor.execute(actuator_query, actuator_record)
+                        print("Successfully insert RawActuatorMonitor from sensor_data to PostgreSQL")
+
                     cursor.close()
                     connect_to_database.close()
                 elif data_receive["operator"] == "energy_data":
@@ -263,12 +353,14 @@ def DataFromActuator():
             message_receive = client.message_arrive()
 
             if message_receive != None:
+                _print_received_topic(backend_topic_dictionary["actuator_data"])
                 print(f"Received `{message_receive}`")
                 data_receive = json.loads(message_receive)
 
                 if data_receive["operator"] == "actuator_data":
+                    server_received_time = int(time.time())
                     info = data_receive["info"]
-                    act  = info.get("actuator_data", {})
+                    act = info.get("actuator_data") or info
 
                     try:
                         connect_to_database = psycopg2.connect(
@@ -290,11 +382,17 @@ def DataFromActuator():
                     record = (
                         info.get("room_id", -1),
                         info.get("node_id", -1),
-                        "fan",
+                        act.get("function", info.get("actuator_function", "fan")),
                         str(act.get("pwm", 0)),
-                        act.get("state", 0),
-                        act.get("fan_speed", "unknown"),
-                        info.get("time", int(time.time())),
+                        act.get("state", act.get("status", 0)),
+                        act.get("fan_speed", act.get("mode", "unknown")),
+                        server_received_time,
+                    )
+                    print(
+                        "[Actuator] Parsed status "
+                        f"node_id={record[1]} room_id={record[0]} "
+                        f"state={record[4]} pwm={record[3]} mode={record[5]} "
+                        f"server_received_time={server_received_time}"
                     )
                     print(record)
                     cursor.execute(query, record)
@@ -318,6 +416,7 @@ def HealthCheckNode():
             message_receive = client.message_arrive()
 
             if message_receive != None:
+                _print_received_topic(backend_topic_dictionary["health_check"])
                 print(f"Received `{message_receive}`")
                 data_receive = json.loads(message_receive)
 
@@ -365,6 +464,7 @@ def RegisterWiFiNode():
             message_receive = client.message_arrive()
 
             if message_receive is not None:
+                _print_received_topic(backend_topic_dictionary["scan_device"])
                 print(f"[WiFi] Received register `{message_receive}`")
                 data_receive = json.loads(message_receive)
 
@@ -387,7 +487,15 @@ def RegisterWiFiNode():
                     connect_to_database.autocommit = True
                     cursor = connect_to_database.cursor()
 
-                    mac = info.get('mac_address')
+                    mac_raw = info.get('mac_address')
+                    if mac_raw is None:
+                        print("[WiFi] Register ignored: missing mac_address")
+                        cursor.close()
+                        connect_to_database.close()
+                        continue
+
+                    mac = str(mac_raw)
+                    desired_room_id = _resolve_wifi_room_id(cursor, mac, info.get("room_id"))
 
                     # Also fetch room_id so the ack reflects whatever the admin assigned.
                     cursor.execute(
@@ -416,7 +524,16 @@ def RegisterWiFiNode():
                             )
 
                         assigned_node_id = row_node_id
-                        ack_room_id = row_room_id if row_room_id is not None else 0
+                        ack_room_id = (
+                            desired_room_id
+                            if desired_room_id is not None
+                            else row_room_id if row_room_id is not None else 0
+                        )
+                        if desired_room_id is not None and row_room_id != desired_room_id:
+                            cursor.execute(
+                                "UPDATE api_registrationnode SET room_id = %s WHERE id = %s",
+                                (desired_room_id, row_id)
+                            )
                         print(f"[WiFi] Re-registration mac={mac} node_id={assigned_node_id} room_id={ack_room_id}")
                     else:
                         # New device: find the lowest free node_id in 1-254 (firmware uint8_t limit).
@@ -433,11 +550,14 @@ def RegisterWiFiNode():
                             """INSERT INTO api_registrationnode
                                    (room_id, node_id, mac, status, time, x_axis, y_axis, z_axis, function)
                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-                            (None, assigned_node_id, mac, 'sync', int(time.time()), 1, 1, 1,
+                            (desired_room_id, assigned_node_id, mac, 'sync', int(time.time()), 1, 1, 1,
                              info.get('node_function', 'None'))
                         )
-                        ack_room_id = 0  # no room yet; admin assigns later via the web UI
-                        print(f"[WiFi] Registered new node mac={mac} node_id={assigned_node_id}")
+                        ack_room_id = desired_room_id if desired_room_id is not None else 0
+                        print(
+                            f"[WiFi] Registered new node mac={mac} "
+                            f"node_id={assigned_node_id} room_id={ack_room_id}"
+                        )
 
                     cursor.close()
                     connect_to_database.close()

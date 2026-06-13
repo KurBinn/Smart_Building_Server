@@ -242,7 +242,9 @@ function RoomMap2D({ url, configurationNodeAll, setListNode, callbackSetSignIn, 
       borderRadius: "12px",
       overflow: "hidden",
       width: widthMap ? widthMap : "100%",
-      height: heightMap ? heightMap : "1000px",
+      height: heightMap ? heightMap : "100%",
+      minHeight: { xs: "420px", md: "0" },
+      flex: 1,
     }}>
       <Canvas orthographic camera={{ position: [0, 0, 10], up: [0, 1, 0], near: 0.1, far: 100 }}>
       <OrbitControls minZoom={200} maxZoom={600} />

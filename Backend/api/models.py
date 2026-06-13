@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
 
-    role = models.IntegerField(default = 0, null = False, db_column = "role",)
+    role = models.IntegerField(default = 2, null = False, db_column = "role",)
 
 class Room(models.Model):
     

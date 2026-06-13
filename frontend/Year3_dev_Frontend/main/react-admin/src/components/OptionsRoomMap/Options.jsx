@@ -38,6 +38,20 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
         setImage(getStoredRoomImage());
     }, [isImageFetched]);
 
+    const toolbarButtonSx = {
+        width: { xs: "calc(50% - 10px)", sm: "120px", lg: "140px" },
+        minWidth: { xs: "96px", sm: "120px" },
+        height: { xs: "44px", md: "48px", xl: "56px" },
+        backgroundColor: "white",
+        fontSize: { xs: "14px", md: "16px", xl: "18px" },
+        fontWeight: "bold",
+        padding: "5px 10px",
+        margin: "5px",
+        border: "2px solid black",
+        borderRadius: "5px",
+        "&:hover": { backgroundColor: "#EEEEEE" }
+    };
+
     return (
         <Box
             sx={{
@@ -45,64 +59,31 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
                 border: "1px solid black",
                 borderRadius: '15px',
                 backgroundColor: theme.palette.background.paper,
-                p:1,
-                mb : 6
+                p:1
             }}
             width="100%" height="100%"
             display="flex"
             flexDirection="column"
             alignItems="center"
-            justifyContent="center"
+            justifyContent="flex-start"
+            minHeight={0}
         >
-            <Grid sx={{ mb:2}}>
-                <Button sx={{
-                    width: "140px",
-                    height: "60px",
-                    backgroundColor: "white",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    padding: "5px 12px",
-                    margin: "5px",
-                    border: "2px solid black",
-                    borderRadius: "5px",
-                    "&:hover": { backgroundColor: "#EEEEEE" }
-                }}
+            <Grid sx={{ mb: 1, width: "100%", display: "flex", flexWrap: "wrap", justifyContent: "center" }}>
+                <Button sx={toolbarButtonSx}
                     onClick={() => {
                         setStatus(true)
                         setStatusConnections(false)
                         }}>
                     {t("room")}
                 </Button>
-                <Button sx={{
-                    width: "140px",
-                    height: "60px",
-                    backgroundColor: "white",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    padding: "5px 12px",
-                    margin: "5px",
-                    border: "2px solid black",
-                    borderRadius: "5px",
-                    "&:hover": { backgroundColor: "#EEEEEE" }
-                }}
+                <Button sx={toolbarButtonSx}
                     onClick={() => {
                         setStatus(false)
                         setStatusConnections(false)
                     }}>
                     {t("heatmap")}
                 </Button>
-                <Button sx={{
-                    width: "140px",
-                    height: "60px",
-                    backgroundColor: "white",
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    padding: "5px 12px",
-                    margin: "5px",
-                    border: "2px solid black",
-                    borderRadius: "5px",
-                    "&:hover": { backgroundColor: "#EEEEEE" }
-                }}
+                <Button sx={toolbarButtonSx}
                     onClick={() => {
                         setStatus(false)
                         setStatusConnections(true)
@@ -118,18 +99,7 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
                 />
                 <label htmlFor="upload-button">
                     <Button component="span"
-                        sx={{
-                            width: "140px",
-                            height: "60px",
-                            backgroundColor: "white",
-                            fontSize: "20px",
-                            fontWeight: "bold",
-                            padding: "5px 12px",
-                            margin: "5px",
-                            border: "2px solid black",
-                            borderRadius: "5px",
-                            "&:hover": { backgroundColor: "#EEEEEE" }
-                        }}>
+                        sx={toolbarButtonSx}>
                         {t("import")}
                     </Button>
                 </label>

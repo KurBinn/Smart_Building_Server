@@ -23,6 +23,15 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
         'time': {'name': null, 'unit': null},
     }
     const energy_data_property_array = Object.keys(define_energy_data);
+    const emptyEnergyData = {
+        'voltage': 'NULL',
+        'current': 'NULL',
+        'active_power': 'NULL',
+        'power_factor': 'NULL',
+        'frequency': 'NULL',
+        'active_energy': 'NULL',
+        'time': 0
+    };
 
     const get_energy_data = async (url, access_token) => 
     {
@@ -41,6 +50,8 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
         const response = await fetch(url, option_fetch);
         if (!response.ok) {
             console.error("HTTP Error:", response.status);
+            setEnergyData(emptyEnergyData);
+            setIsLoading(false);
             return;
         }
         const data = await response.json();
@@ -90,13 +101,14 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
                 }
                 newEnergyData[each_key] = fetch_data;
             })
-            setIsLoading(false);
             setEnergyData(newEnergyData);
+            setIsLoading(false);
         }
         else {
             console.log("Some error happened, try to reload page!");
+            setEnergyData(emptyEnergyData);
+            setIsLoading(false);
         }
-        setIsLoading(false);
     }
 
     useEffect(() => {
@@ -124,26 +136,26 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
         <>
         {
             isLoading ? <h1>Loading...</h1> :
-            <Grid container item textAlign='center' paddingTop={preferMd ? 0 : 0.5} 
+            <Grid container item textAlign='center' paddingTop={0.25}
             justifyContent='center'>
                 <Grid item xs={12} sm={12} md={12} textAlign="center" my={0.25} >
-                    <Typography fontWeight="bold" fontSize='24px'>
+                    <Typography fontWeight="bold" fontSize='22px'>
                         {t("energydata")}
                     </Typography>
                 </Grid>
-                <Grid item container spacing={1} px='10px' marginBottom={0.5} justifyContent='center'>
+                <Grid item container spacing={0.75} px='8px' marginBottom={0.25} justifyContent='center'>
                     {energy_data_property_array.map((value, index) => {
                         if (index !== 0 && index !==7)
                         return (
                             <Grid item xs={4}>
                             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxShadow: 0 }}>
-                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '10px'}} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
+                            <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '6px'}} sx={{ boxShadow: "0px 0px 0px 0px", border: `1px solid ${theme.palette.grey[400]}`}}>
                                 <Grid container display="flex" flexDirection="column" justifyItems='center' textAlign='center'>
                                     <Grid container item justifyContent='center' alignContent='center'>
-                                        <Typography variant='h5'>{t(define_energy_data[value]['name'])}</Typography>
+                                        <Typography sx={{ fontSize: "14px" }}>{t(define_energy_data[value]['name'])}</Typography>
                                     </Grid>
                                     <Grid item>
-                                        <Typography variant='h4' fontWeight='bold'>
+                                        <Typography sx={{ fontSize: "18px", fontWeight: "bold" }}>
                                             {((temp) => {
                                                 if (energyData[value] == 'NULL' || index == 4) temp = energyData[value];
                                                 else temp = `${energyData[value]} ${define_energy_data[value]['unit']}`
@@ -158,8 +170,8 @@ const Energy = ({room_id, callbackSetSignIn, time_delay, backend_host}) =>{
                         )
                     })}
                 </Grid>
-                <Grid xs={12} textAlign='center' spacing={1} marginY={1}>
-                    <Typography textAlign='center' variant='h5'>updated on {
+                <Grid xs={12} textAlign='center' spacing={1} marginY={0.5}>
+                    <Typography textAlign='center' sx={{ fontSize: "14px" }}>updated on {
                                             (()=>{
                                                 const new_time = energyData["time"];
                                                 const utcDate = new Date(new_time * 1000); // Convert seconds to milliseconds

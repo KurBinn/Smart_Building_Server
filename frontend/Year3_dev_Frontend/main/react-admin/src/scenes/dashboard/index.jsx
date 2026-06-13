@@ -1,7 +1,6 @@
 import { Box, useTheme } from "@mui/material";
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useCallback } from "react";
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
 import Energy from "../../components/AqiRef/Energy2";
 import { UserContext } from "../../App";
 import Chart from "../../data/Chart2";
@@ -24,16 +23,72 @@ const Dashboard = () => {
     const url_image = data_passed_from_landingpage?.image_url ?? null;
     const theme = useTheme();
     const callbackSetSignIn = useContext(UserContext);
-    const [id, setId] = useState(1);
-    const [optionData, setOptionData] = useState("now");        //change option to show different Chart
-    const [optionChartData, setOptionChartData] = useState("now")
+    const [optionChartData] = useState("now")
     const apiInformationTag = `http://${backend_host}/api/room/information_tag?room_id=${room_id}`;
-    const [actuatorInfoOfRoom, setActuatorInfoOfRoom] = useState([]);
+    const [, setActuatorInfoOfRoom] = useState([]);
     const [configurationNodeAll, setConfigurationNodeAll] = useState([]);
     const api = `http://${host}/api/configuration_node?room_id=${room_id}`
     const [listNode, setListNode] = useState([])
-    const [separate, setSeparate] = useState(false)
+    const [, setSeparate] = useState(false)
     const [isImageFetched, setIsImageFetched] = useState(false);
+    const getDetailNodeId = (node) => node.node_id ?? node.id;
+    const normalizeDetailNodes = (node) => {
+        const nodeId = getDetailNodeId(node);
+        const nodeFunction = node.type ?? node.function;
+        if (nodeFunction === "sensor_actuator") {
+            return [
+                { id: nodeId, type: "sensor" },
+                { id: nodeId, type: "actuator" },
+            ];
+        }
+        return [{
+            id: nodeId,
+            type: nodeFunction === "sensor" ? "sensor" : "actuator",
+        }];
+    };
+    const configuredDetailNodes = configurationNodeAll
+        .filter((node) => {
+            const status = String(node.status ?? "").toLowerCase();
+            return status === "" || status === "sync" || status === "active";
+        })
+        .flatMap(normalizeDetailNodes);
+    const selectedDetailNodes = listNode.flatMap(normalizeDetailNodes);
+    const selectedSensors = selectedDetailNodes.filter((node) => node.type === "sensor");
+    const selectedActuators = selectedDetailNodes.filter((node) => node.type === "actuator");
+    const visibleDetailNodes = [
+        ...(selectedSensors.length > 0
+            ? selectedSensors
+            : configuredDetailNodes.filter((node) => node.type === "sensor")),
+        ...(selectedActuators.length > 0
+            ? selectedActuators
+            : configuredDetailNodes.filter((node) => node.type === "actuator")),
+    ];
+    const panelSx = {
+        boxShadow: 0,
+        border: `1px solid ${theme.palette.divider}`,
+        borderRadius: "15px",
+        backgroundColor: theme.palette.background.paper,
+    };
+    const mainLayoutSx = {
+        display: "grid",
+        gap: 1.5,
+        p: "8px",
+        alignItems: "stretch",
+        gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            md: "minmax(280px, 0.92fr) minmax(440px, 1.65fr) minmax(270px, 0.82fr)",
+            xl: "minmax(300px, 0.9fr) minmax(560px, 1.7fr) minmax(300px, 0.9fr)",
+        },
+        "@media (min-width: 900px) and (max-aspect-ratio: 4/3)": {
+            gridTemplateColumns: "minmax(280px, 0.95fr) minmax(420px, 1.45fr)",
+            "& .dashboard-right-column": {
+                gridColumn: "1 / -1",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(260px, 1fr))",
+                alignItems: "start",
+            },
+        },
+    };
     const getConfigurationNodeAllData = async (url, access_token) =>
     {
 
@@ -64,7 +119,7 @@ const Dashboard = () => {
         }
     }
 
-    const fetchAndEncodeImage = async () => {
+    const fetchAndEncodeImage = useCallback(async () => {
         try {
             setIsImageFetched(false);
             const imageSource = await fetchRoomImageAsDataUrl(url_image, backend_host);
@@ -75,7 +130,7 @@ const Dashboard = () => {
             saveRoomImage(DEFAULT_ROOM_IMAGE);
             setIsImageFetched(true);
         }
-        };
+    }, [backend_host, url_image]);
 
     useEffect(()=>{
         fetchAndEncodeImage()
@@ -84,7 +139,7 @@ const Dashboard = () => {
             verify_and_get_data(getConfigurationNodeAllData, callbackSetSignIn, backend_host, api);
         }, 20000);
         return () => clearInterval(timer);
-    }, [api, backend_host, callbackSetSignIn, url_image])
+    }, [api, backend_host, callbackSetSignIn, fetchAndEncodeImage])
     return (
     <>
     <Box 
@@ -96,38 +151,30 @@ const Dashboard = () => {
     >
         <Box m={2}/>
             <Container
-                maxWidth="false"
-                disableGutters='true'
+                maxWidth={false}
+                disableGutters
+                sx={{ overflowX: "hidden" }}
             >
-                <Grid
-                    container alignItems="stretch" spacing={2} p='10px'
-                    style={{
-                            display: "flex",
-                            height: "100%",
-                            // backgroundColor: "red"
-                        }}
-                >
-                    <Grid item xs={12} sm={12} md={12} lg={12} xl={3.5} >
+                <Box sx={mainLayoutSx}>
+                    <Box sx={{ minWidth: 0, height: "100%" }}>
                         <Box
                             width="100%" height="100%" display="flex"
-                            flexDirection="column" alignItems="center" justifyContent="center"
+                            flexDirection="column" alignItems="center" justifyContent="flex-start"
                         >
                             <Box 
-                                sx={{boxShadow: 0,
-                                    border: "1px solid black",
-                                    borderRadius: '15px', 
-                                    backgroundColor: theme.palette.background.paper}}
-                                width="100%" height="100%" display="flex"
+                                sx={{
+                                    ...panelSx,
+                                    flex: "0 1 auto"}}
+                                width="100%" display="flex"
                                 flexDirection="column" alignContent="center" justifyContent="center"
                             >
                                 <AqiRef callbackSetSignIn={callbackSetSignIn} time_delay={60000}/>
                             </Box>
                             <Box
-                                sx={{boxShadow: 0,
-                                    border: "1px solid black",
-                                    borderRadius: '15px',
-                                    backgroundColor: theme.palette.background.paper}}
-                                width="100%" height="100%"
+                                sx={{
+                                    ...panelSx,
+                                    flex: "1 1 auto"}}
+                                width="100%"
                                 display="flex"
                                 flexDirection="row"
                                 alignSelf='center'
@@ -138,17 +185,16 @@ const Dashboard = () => {
                             <InformationTag
                                 url={apiInformationTag}
                                 callbackSetSignIn={callbackSetSignIn}
-                                time_delay={20000}
+                                time_delay={30000}
                                 room_id={room_id}
                                 setActuatorInfoOfRoom={setActuatorInfoOfRoom}
                             />
                             </Box>
                             <Box 
-                                sx={{boxShadow: 0,
-                                    border: "1px solid black",
-                                    borderRadius: '15px', 
-                                    backgroundColor: theme.palette.background.paper}}
-                                width="100%" height="100%"
+                                sx={{
+                                    ...panelSx,
+                                    flex: "0 0 auto"}}
+                                width="100%"
                                 display="flex"
                                 flexDirection="row"
                                 alignSelf='center'
@@ -160,12 +206,17 @@ const Dashboard = () => {
                             </Box>
 
                         </Box>
-                    </Grid>
+                    </Box>
 
-                    <Grid item xs={12} sm={12} md={12} lg={12} xl={separate > 0 ? 5.5 : 8.5} sx={{height:"1150px"}}
-                        direction="column"
-                        alignItems="center"
-                        justify="center"
+                    <Box sx={{
+                        display: "flex",
+                        alignSelf: "stretch",
+                        minHeight: {
+                            xs: "min(72vh, 640px)",
+                            md: "clamp(560px, calc(100vh - 190px), 920px)",
+                        },
+                        minWidth: 0,
+                    }}
                     >
                         <Options
                             room_id={room_id}
@@ -174,36 +225,36 @@ const Dashboard = () => {
                             setListNode = {setListNode}
                             setSeparate = {setSeparate}
                             isImageFetched = {isImageFetched}
-                            widthMap= {separate?null:"920px"}
+                            widthMap="100%"
                             data_passed_from_landingpage={data_passed_from_landingpage}
                         />
-                    </Grid>
+                    </Box>
 
-                    {separate && (
-                    <Grid item xs={12} sm={12} md={12} lg={12} xl={3} container display='flex' direction="column" alignItems="center" justify="center">
+                    <Box className="dashboard-right-column" sx={{ minWidth: 0, height: "auto", pr: 0.5, overflow: "visible" }}>
                         <DetailNode
                             room_id={room_id}
                             callbackSetSignIn={callbackSetSignIn}
-                            listNode={listNode}
+                            listNode={visibleDetailNodes}
                         />
-                    </Grid>
-                    )}
-                </Grid>
+                    </Box>
+                </Box>
 
-                <Grid
-                    container alignItems="stretch" spacing={2} p='10px'
-                    style={{
-                            display: "flex", 
-                            height: "100%", 
-                            // backgroundColor: "red"
-                        }}
+                <Box
+                    sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
+                        alignItems: "stretch",
+                        gap: 1.5,
+                        p: "8px",
+                        mt: 0,
+                    }}
                 >
-                    <Grid item xs={12} sm={12} md={12} lg={6} xl={6}>
+                    <Box sx={{ minWidth: 0 }}>
                         <Box 
-                            sx={{boxShadow: 0,
-                                border: "1px solid black",
-                                borderRadius: '15px', 
-                                backgroundColor: theme.palette.background.paper}}
+                            sx={{
+                                ...panelSx,
+                                minHeight: "clamp(230px, 27vh, 340px)",
+                            }}
                             width="100%" height="100%"
                             display="flex"
                             flexDirection="column"
@@ -212,13 +263,13 @@ const Dashboard = () => {
                         >
                             <EnergyChart room_id={room_id} callbackSetSignIn={callbackSetSignIn} time_delay={15000} backend_host={backend_host}/>
                         </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={12} md={12} lg={6}>
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
                         <Box 
-                            sx={{boxShadow: 0,
-                                borderRadius: '15px',
-                                border: "1px solid black",
-                                backgroundColor: theme.palette.background.paper}}
+                            sx={{
+                                ...panelSx,
+                                minHeight: "clamp(230px, 27vh, 340px)",
+                            }}
                             width="100%" height="100%"
                             display="flex"
                             flexDirection="column"
@@ -229,23 +280,23 @@ const Dashboard = () => {
                                 optionChartData === "now" ?
                                 <Chart
                                         room_id={room_id}
-                                        callbackSetSignIn={callbackSetSignIn} 
-                                        timedelay={10000} 
+                                        callbackSetSignIn={callbackSetSignIn}
+                                        timedelay={30000}
                                         optionData={optionChartData}
                                         apiInformationTag={apiInformationTag}
                                 />
                                 :
                                 <Chart
-                                        room_id={room_id} 
-                                        callbackSetSignIn={callbackSetSignIn} 
-                                        timedelay={10000} 
+                                        room_id={room_id}
+                                        callbackSetSignIn={callbackSetSignIn}
+                                        timedelay={30000}
                                         optionData={optionChartData}
                                         apiInformationTag={apiInformationTag}
                                 />
                             }
                         </Box>
-                    </Grid>
-                </Grid>
+                    </Box>
+                </Box>
             </Container>
         </Box>
     </>

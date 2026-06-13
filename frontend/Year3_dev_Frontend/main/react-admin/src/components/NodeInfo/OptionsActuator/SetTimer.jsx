@@ -5,19 +5,21 @@ import dayjs from "dayjs";
 import { host } from "../../../App";
 import { MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 
-function SetTimer({room_id, callbackSetSignIn, idNode, status, selectFunction}) {
+function SetTimer({room_id, callbackSetSignIn, idNode, status, selectFunction, disabled = false}) {
   const [valueStartTime, setValueStartTime] = useState(dayjs());
   const [valueEndTime, setValueEndTime] = useState(dayjs().add(1, "minute"));
   const [open, setOpen] = useState(false)
-  const [value, setValue] = useState(16);
+  const [value, setValue] = useState(1);
 
   const handleChange = (event) => {
+    if (disabled) return;
     setValue(event.target.value);
   };
 
-  const options = Array.from({ length: 15 }, (_, i) => i + 16);
+  const options = Array.from({ length: 5 }, (_, i) => i + 1);
 
   const handleStartTimeChange = (newValue) => {
+    if (disabled) return;
     if (newValue) {
       setValueStartTime(newValue);
       if (newValue.add(1, "minute").isAfter(valueEndTime)) {
@@ -27,6 +29,7 @@ function SetTimer({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
   };
 
   const handleAccept = async() => {
+    if (disabled || !idNode) return;
     setOpen(false)
     const access_token =localStorage.getItem("access");
     const headers = {
@@ -68,6 +71,7 @@ function SetTimer({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
           }}
           value={valueStartTime}
           onChange={handleStartTimeChange}
+          disabled={disabled}
           minDateTime={dayjs()}
           disableFuture={false}
           renderInput={(params) => <TextField {...params}/>}
@@ -89,6 +93,7 @@ function SetTimer({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
           }}
           value={valueEndTime}
           onChange={(newValue) => setValueEndTime(newValue)}
+          disabled={disabled}
           minDateTime={valueStartTime.add(1, "minute")}
           disableFuture={false}
           renderInput={(params) => <TextField {...params}/>}
@@ -96,18 +101,20 @@ function SetTimer({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
       </Grid>
       <>
         <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={2}>
-          <Typography id="select-label" fontWeight={"bold"}>Temperature</Typography>
+          <Typography id="select-label" fontWeight={"bold"}>{disabled ? "NaN" : "Fan Mode"}</Typography>
           <FormControl size="small" sx={{ minWidth: 55 }}>
             <Select
               labelId="select-label"
-              value={value}
+              value={disabled ? "" : value}
               onChange={handleChange}
+              disabled={disabled}
               sx={{
                 mt: 1,
                 borderRadius: 2,
                 height: "40px",
               }}
             >
+              {disabled && <MenuItem value="">NaN</MenuItem>}
               {options.map((num) => (
                 <MenuItem key={num} value={num}>
                   {num}
@@ -121,6 +128,7 @@ function SetTimer({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
               width: "10px",
               height: "40px",
             }}
+            disabled={disabled}
             onClick = {() => setOpen(true)}
             >
               Send

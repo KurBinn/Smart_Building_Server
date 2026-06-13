@@ -10,6 +10,7 @@ import { host } from "../../App";
 import verify_and_get_data from "../../function/fetchData";
 import { useTranslation } from "react-i18next";
 import  "../../utils/i18n";
+import { getAqiRating, normalizeAqiValue, NO_AQI_RATING } from "../../utils/aqi";
 
 export default function AqiRef({ callbackSetSignIn, time_delay }) {
     const url = `http://${host}/api/aqi_ref`;
@@ -18,24 +19,6 @@ export default function AqiRef({ callbackSetSignIn, time_delay }) {
     const [isLoading, setIsLoading] = useState(true);
 
     const [data, setData] = useState(null);
-
-    const rating_index = {
-        1: { level: "good", colour: "green" },
-        2: { level: "moderate", colour: "yellow" },
-        3: { level: "poor", colour: "orange" },
-        4: { level: "unhealthy", colour: "red" },
-        5: { level: "veryUnhealthy", colour: "purple" },
-        6: { level: "hazardous", colour: "maroon" },
-    };
-
-    const rating_array = [
-        { "key": 1, "min": 0, "max": 50 },
-        { "key": 2, "min": 51, "max": 100 },
-        { "key": 3, "min": 101, "max": 150 },
-        { "key": 4, "min": 151, "max": 200 },
-        { "key": 5, "min": 201, "max": 300 },
-        { "key": 6, "min": 301, "max": 500 },
-    ];
 
     const fetch_data_function = async (api, access_token) => {
 
@@ -51,38 +34,29 @@ export default function AqiRef({ callbackSetSignIn, time_delay }) {
             "body": null,
         }
         const response = await fetch(api, option_fetch);
-        if (response.status == 200) {
-            const data = await response.json();
-            const new_data = data["Response"]
-            let index = 0;
-            for (let i = 0; i < rating_array.length; ++i) {
-                if (rating_array[i]["min"] <= new_data["aqi"] && new_data["aqi"] <= rating_array[i]["max"]) {
-                    index = rating_array[i]["key"];
-                    break;
-                }
-            }
-            if (rating_index.hasOwnProperty(index)) {
-                new_data["rating"] =
-                {
-                    "color": rating_index[index]["colour"],
-                    "rate": rating_index[index]["level"],
-                }
-            }
-            else {
-                new_data["rating"] =
-                {
-                    "color": "white",
-                    "rate": "No data",
-                }
+        if (response.status === 200) {
+            const response_data = await response.json();
+            const new_data = { ...(response_data["Response"] || {}) };
+            const aqi = normalizeAqiValue(new_data["aqi"]);
+            const rating = getAqiRating(aqi);
+
+            new_data["aqi"] = aqi ?? "No data";
+            new_data["rating"] =
+            {
+                "color": rating.color,
+                "rate": rating.level,
             }
             setData(new_data);
         }
         else {
-            let new_data;
+            let new_data = {
+                "aqi": "No data",
+                "time": 0,
+            };
             new_data["rating"] =
             {
-                "color": "white",
-                "rate": "No data",
+                "color": NO_AQI_RATING.color,
+                "rate": NO_AQI_RATING.level,
             }
             setData(new_data);
         }
@@ -100,7 +74,7 @@ export default function AqiRef({ callbackSetSignIn, time_delay }) {
             }, time_delay);
             return () => clearTimeout(timer);
         }
-    }, [data])
+    }, [data, callbackSetSignIn, time_delay, url])
     return (
         <>
             {   isLoading ?

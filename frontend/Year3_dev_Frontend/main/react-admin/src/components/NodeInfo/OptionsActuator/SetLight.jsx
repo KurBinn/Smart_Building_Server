@@ -2,14 +2,16 @@ import { useState, useEffect } from "react";
 import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Slider, Typography} from "@mui/material";
 import { host } from "../../../App";
 
-function SetLight({room_id, callbackSetSignIn, idNode, status, selectFunction}) {
+function SetLight({room_id, callbackSetSignIn, idNode, status, selectFunction, disabled = false}) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(50);
   const handleChange = (event, newValue) => {
+    if (disabled) return;
     setValue(newValue);
   };
 
   const handleAccept = async() => {
+      if (disabled || !idNode) return;
       setOpen(false);
       const access_token =localStorage.getItem("access");
       const headers = {
@@ -34,10 +36,11 @@ function SetLight({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
   return (
     <Grid container xs={12} sx={{ mt: 2 }} alignItems="center" justifyContent="center" spacing={1}>
       <Grid item>
-        <Typography sx={{ fontWeight: 'bold' }}>Light Percent: {value}%</Typography>
+        <Typography sx={{ fontWeight: 'bold' }}>Light Percent: {disabled ? "NaN" : `${value}%`}</Typography>
         <Slider
           value={value}
           onChange={handleChange}
+          disabled={disabled}
           aria-label="Default"
           valueLabelDisplay="auto"
           min={0}
@@ -45,7 +48,7 @@ function SetLight({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
           step={25}
         />
       </Grid>
-      { status === true
+      { !disabled && status === true
         ?
         <Grid item>
           <Button
@@ -92,7 +95,7 @@ function SetLight({room_id, callbackSetSignIn, idNode, status, selectFunction}) 
             </DialogActions>
         </Dialog>
         </Grid>
-        : <h3>Actuator is OFF</h3>}
+        : <h3>{disabled ? "NaN" : "Actuator is OFF"}</h3>}
     </Grid>
   )
 }

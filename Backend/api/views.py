@@ -31,6 +31,11 @@ import os, csv
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
+SENSOR_FUNCTIONS = ("sensor", "sensor_actuator")
+
+def _is_actuator_function(function):
+    return function != "sensor"
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
@@ -285,123 +290,81 @@ def GetRoomInformation(request, *args, **kwargs):
 
     try:
         room_id = request.GET["room_id"]
-        if RawSensorMonitor.objects.count() != 0:
+        parameter_key_list = {
+            "co2",
+            "temp",
+            "hum",
+            "light",
+            "dust",
+            "sound",
+            "red",
+            "green",
+            "blue",
+            "tvoc",
+            "motion",
+        }
+        average_data_to_return = {para: [-1] for para in parameter_key_list}
+        average_data_to_return["time"] = 0
 
-            if ( RegistrationNode.objects.filter(room_id = room_id, function = "sensor", status = "sync").count() == 0):
-                parameter_key_list = {
-                    "co2",
-                    "temp",
-                    "hum",
-                    "light",
-                    "dust",
-                    "sound",
-                    "red",
-                    "green",
-                    "blue",
-                    "tvoc",
-                    "motion",
-                }
-                average_data_to_return = {}
-                for i in parameter_key_list:
-                    average_data_to_return[i] = -1
-                    average_data_to_return["time"] = 0
-                return Response(average_data_to_return, status = status.HTTP_200_OK)
-            
-            all_node_id = RegistrationNode.objects.filter(room_id = room_id, function = "sensor", status = "sync")
-            all_node_id_serializer = RegistrationNodeSerializer(all_node_id, many = True)
+        sensor_nodes = RegistrationNode.objects.filter(
+            room_id = room_id, function__in = SENSOR_FUNCTIONS, status = "sync"
+        )
+        all_synced_nodes = RegistrationNode.objects.filter(room_id = room_id, status = "sync")
 
-            all_node_id_list = [
-                i["node_id"] for i in all_node_id_serializer.data
-            ]
+        sensor_node_information_in_this_room_list = RegistrationNodeSerializer(
+            sensor_nodes, many=True
+        ).data
+        average_data_to_return["node_info"] = {
+            "sensor": sensor_node_information_in_this_room_list,
+            "actuator": [
+                node for node in RegistrationNodeSerializer(all_synced_nodes, many=True).data
+                if _is_actuator_function(node["function"])
+            ],
+        }
 
-            latest_data_of_each_node_id = []
-            for each_node_id in all_node_id_list:
-                if RawSensorMonitor.objects.filter(room_id = room_id, node_id = each_node_id).exists():
+        room_data = Room.objects.filter(room_id=room_id).first()
+        average_data_to_return["room_size"] = {
+            "x_length": room_data.x_length if room_data else None,
+            "y_length": room_data.y_length if room_data else None,
+        }
 
-                    data_of_this_node_id = RawSensorMonitor.objects.filter(
-                        room_id = room_id, node_id=each_node_id
-                    ).order_by("-time")[0]
-                    latest_data_of_each_node_id.append(
-                        RawSensorMonitorSerializer(data_of_this_node_id).data
-                    )
-                else:
-                    continue
-            
-            parameter_key_list = {
-                "co2",
-                "temp",
-                "hum",
-                "light",
-                "dust",
-                "sound",
-                "red",
-                "green",
-                "blue",
-                "tvoc",
-                "motion",
-            }
-
-            # if len(latest_data_of_each_node_id) == 0:
-            #     average_data_to_return = {para: -1 for para in parameter_key_list}
-            #     average_data_to_return["time"] = 0
-            #     return Response(average_data_to_return, status = status.HTTP_200_OK)
-
-            average_data_to_return = {}
-            latest_time = max(
-                data["time"] for data in latest_data_of_each_node_id
-            )
-            average_data_to_return["time"] = latest_time
-            sum_count = {para: {"sum": 0, "count": 0} for para in parameter_key_list}
-            for data in latest_data_of_each_node_id:
-                for para in parameter_key_list:
-                    if data[para] != -1 and data[para]:
-                        sum_count[para]["sum"] += data[para]
-                        sum_count[para]["count"] += 1
-            for para in parameter_key_list:
-                average_data_to_return[para] = []
-            for para in parameter_key_list:
-                if sum_count[para]["count"] > 0:
-                    average_data_to_return[para].append(
-                        int(sum_count[para]["sum"] / sum_count[para]["count"])
-                    )
-                else:
-                    average_data_to_return[para] = -1
-            sensor_node_information_in_this_room_list = RegistrationNodeSerializer(
-                RegistrationNode.objects.filter(
-                    room_id = room_id, function = "sensor", status = "sync"
-                ),
-                many=True,
-            ).data
-
-            actuator_node_information_in_this_room_list = RegistrationNodeSerializer(
-                RegistrationNode.objects.filter(room_id = room_id, status = "sync"), many=True
-            ).data
-
-            real_actuator_node_information_in_this_room_list = []
-            for i in actuator_node_information_in_this_room_list:
-                if i["function"] != "sensor":
-                    real_actuator_node_information_in_this_room_list.append(i)
-
-            average_data_to_return["node_info"] = {
-                "sensor": sensor_node_information_in_this_room_list,
-                "actuator": real_actuator_node_information_in_this_room_list,
-            }
-
-            room_size_data = RoomSerializer(
-                Room.objects.filter(room_id=room_id), many=True
-            ).data
-            average_data_to_return["room_size"] = {
-                "x_length": room_size_data[0]["x_length"],
-                "y_length": room_size_data[0]["y_length"],
-            }
+        if not sensor_nodes.exists():
             return Response(average_data_to_return, status = status.HTTP_200_OK)
-        else:
-            return Response(
-                {"Response": "No content!"}, status = status.HTTP_204_NO_CONTENT
-            )
-    except:
+
+        latest_data_of_each_node_id = []
+        for node in sensor_nodes:
+            data_of_this_node_id = RawSensorMonitor.objects.filter(
+                room_id = room_id, node_id = node.node_id
+            ).order_by("-time").first()
+            if data_of_this_node_id is not None:
+                latest_data_of_each_node_id.append(
+                    RawSensorMonitorSerializer(data_of_this_node_id).data
+                )
+
+        if len(latest_data_of_each_node_id) == 0:
+            return Response(average_data_to_return, status = status.HTTP_200_OK)
+
+        average_data_to_return["time"] = max(
+            data["time"] for data in latest_data_of_each_node_id
+        )
+        sum_count = {para: {"sum": 0, "count": 0} for para in parameter_key_list}
+        for data in latest_data_of_each_node_id:
+            for para in parameter_key_list:
+                value = data.get(para)
+                if value is not None and value != -1:
+                    sum_count[para]["sum"] += value
+                    sum_count[para]["count"] += 1
+
+        for para in parameter_key_list:
+            if sum_count[para]["count"] > 0:
+                average_data_to_return[para] = [
+                    round(sum_count[para]["sum"] / sum_count[para]["count"], 2)
+                ]
+
+        return Response(average_data_to_return, status = status.HTTP_200_OK)
+    except Exception as e:
         return Response(
-            {"Response": "Error on server!"},
+            {"Response": f"Error on server: {str(e)}"},
             status = status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -413,7 +376,10 @@ def GetEnergyData(request, *args, **kwargs):
         data_energy = EnergyData.objects.filter(room_id = room_id).order_by("-time").first()
 
         if data_energy is None:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                [-1, -1, -1, -1, -1, -1, -1, 0],
+                status=status.HTTP_200_OK,
+            )
 
         data_energy_serializer = EnergyDataSerializer(data_energy)
         data_energy_array = [
@@ -433,8 +399,11 @@ def GetEnergyDataChart(request, *args, **kwargs):
 
     try:
         room_id = request.GET["room_id"]
-        year = datetime.datetime.now().year
         offset_energy = 17.02
+        energy_query = EnergyData.objects.filter(room_id = room_id).order_by("time")
+
+        if not energy_query.exists():
+            return Response([[], [], []], status = status.HTTP_200_OK)
 
         def end_of_month_unixtimestamp(year, month):
             if month == 12:
@@ -447,24 +416,28 @@ def GetEnergyDataChart(request, *args, **kwargs):
             end_of_month = first_day_of_next_month - datetime.timedelta(seconds=1)
             return int(end_of_month.timestamp() - 7 * 60 * 60)
         
-        dataFirstObj = EnergyDataSerializer(EnergyData.objects.filter(room_id = room_id).first(), many = False)
-        month_start = datetime.datetime.fromtimestamp(dataFirstObj.data["time"]).month
-        dataLastObj = EnergyDataSerializer(EnergyData.objects.filter(room_id = room_id).last(), many = False)
-        month_end = datetime.datetime.fromtimestamp(dataLastObj.data["time"]).month
+        first_record_time = datetime.datetime.fromtimestamp(energy_query.first().time)
+        last_record_time = datetime.datetime.fromtimestamp(energy_query.last().time)
     
         data_return = []
-        for month in range(month_start, month_end + 1):
-
-            obj = (
-                EnergyData.objects.filter(
-                    time__lte = end_of_month_unixtimestamp(year, month),
-                    room_id = room_id).order_by("-time").first()
-            )
-            data_return.append(obj)
+        month_cursor = datetime.datetime(first_record_time.year, first_record_time.month, 1)
+        last_month = datetime.datetime(last_record_time.year, last_record_time.month, 1)
+        while month_cursor <= last_month:
+            obj = EnergyData.objects.filter(
+                time__lte = end_of_month_unixtimestamp(month_cursor.year, month_cursor.month),
+                room_id = room_id
+            ).order_by("-time").first()
+            if obj is not None:
+                data_return.append(obj)
+            if month_cursor.month == 12:
+                month_cursor = datetime.datetime(month_cursor.year + 1, 1, 1)
+            else:
+                month_cursor = datetime.datetime(month_cursor.year, month_cursor.month + 1, 1)
         data_return_serializer = EnergyDataSerializer(data_return, many = True)
     
         month_year_list = []
         active_power_list = []
+        average_active_power_list = []
         time_activeEnergy_List = []
         
         for item in data_return_serializer.data:
@@ -472,6 +445,24 @@ def GetEnergyDataChart(request, *args, **kwargs):
                 f"{datetime.datetime.fromtimestamp(item['time']).month}_{datetime.datetime.fromtimestamp(item['time']).year}"
             )
             active_power_list.append(item["active_energy"])
+            month = datetime.datetime.fromtimestamp(item["time"]).month
+            item_year = datetime.datetime.fromtimestamp(item["time"]).year
+            month_start_time = (
+                datetime.datetime(item_year, month, 1).timestamp()
+                if month > 1
+                else datetime.datetime(item_year, 1, 1).timestamp()
+            )
+            month_records = energy_query.filter(
+                time__lte = end_of_month_unixtimestamp(item_year, month),
+                time__gte = int(month_start_time),
+            )
+            power_values = [
+                record.active_power for record in month_records
+                if record.active_power is not None and record.active_power >= 0
+            ]
+            average_active_power_list.append(
+                round(sum(power_values) / len(power_values), 2) if len(power_values) > 0 else 0
+            )
 
         active_power_list[0] -= offset_energy
         energy_consumption_in_month = [active_power_list[0]]
@@ -486,6 +477,7 @@ def GetEnergyDataChart(request, *args, **kwargs):
             energy_consumption_in_month.append(adjusted_value)
         time_activeEnergy_List.append(month_year_list)
         time_activeEnergy_List.append(energy_consumption_in_month)
+        time_activeEnergy_List.append(average_active_power_list)
         
         return Response(time_activeEnergy_List, status = status.HTTP_200_OK)
     except:
@@ -581,7 +573,7 @@ def GetEnviromentData(request, *args, **kwargs):
         ]
         sensor_node_id_list = [
             i["node_id"]
-            for i in RegistrationNodeSerializer(RegistrationNode.objects.filter(room_id = room_id, function="sensor"),many=True,).data
+            for i in RegistrationNodeSerializer(RegistrationNode.objects.filter(room_id = room_id, function__in=SENSOR_FUNCTIONS),many=True,).data
         ]
         total_list = []
         if node_id == 0:
@@ -606,7 +598,7 @@ def GetEnviromentData(request, *args, **kwargs):
             return_data = {}
             for i in parameter_key_list:
                 return_data[i] = []
-            return Response(return_data, status = status.HTTP_204_NO_CONTENT)
+            return Response(return_data, status = status.HTTP_200_OK)
 
         max_len_of_array_in_total_list = max([len(i) for i in total_list])
 
@@ -715,7 +707,7 @@ def AQIdustpm2_5(request, *args, **kwargs):
             },
             {
                 "conclo": 250.5,
-                "conclo": 500.4,
+                "conchi": 500.4,
                 "aqilo": 301,
                 "aqihi": 500,
             },
@@ -770,29 +762,30 @@ def AQIdustpm2_5(request, *args, **kwargs):
                 sum_value += i["value"] * (weight_factor ** i["pow"])
                 sum_of_power += weight_factor ** i["pow"]
 
-            hourly_dust = round(sum_value / sum_of_power, 1)
+            hourly_dust_mg_m3 = round(sum_value / sum_of_power, 3)
+            hourly_pm25_ug_m3 = round(hourly_dust_mg_m3 * 1000, 1)
+            hourly_aqi = 500
 
             for i in pm2_5_table:
-                if round(hourly_dust) > 500:
-                    hourly_dust = 500
+                if hourly_pm25_ug_m3 > 500.4:
                     break
                 if (
-                    round(hourly_dust) <= i["conchi"]
-                    and round(hourly_dust) >= i["conclo"]
+                    hourly_pm25_ug_m3 <= i["conchi"]
+                    and hourly_pm25_ug_m3 >= i["conclo"]
                 ):
                     conclo = i["conclo"]
                     conchi = i["conchi"]
                     aqilo = i["aqilo"]
                     aqihi = i["aqihi"]
-                    hourly_dust = round(
-                        (aqihi - aqilo) * (hourly_dust - conclo) / (conchi - conclo)
+                    hourly_aqi = round(
+                        (aqihi - aqilo) * (hourly_pm25_ug_m3 - conclo) / (conchi - conclo)
                         + aqilo
                     )
                     break
 
             return Response(
                 {
-                    "hourly": hourly_dust,
+                    "hourly": hourly_aqi,
                     "daily": 0,
                     "time": hourly_dust_data[-1]["time"],
                 },
@@ -830,7 +823,7 @@ def GetActuatorStatus(request, *args, **kwargs):
             )
 
         status_record = RawActuatorMonitorSerializer(
-            RawActuatorMonitor.objects.filter(node_id = node_id, room_id = room_id).order_by("-time").first()
+            RawActuatorMonitor.objects.filter(node_id = node_id, room_id = room_id).order_by("-id").first()
         ).data
 
         return Response(status_record, status = status.HTTP_200_OK)
@@ -1077,7 +1070,7 @@ def GetRawDataAllSensor(request, *args, **kwargs):
 
     try:
         room_id = request.GET["room_id"]
-        all_sensor_node = RegistrationNode.objects.filter(room_id = room_id, function = "sensor")
+        all_sensor_node = RegistrationNode.objects.filter(room_id = room_id, function__in = SENSOR_FUNCTIONS)
         raw_data_all = []
         for node in all_sensor_node:
             raw_data_node = RawSensorMonitor.objects.filter(room_id = room_id, node_id = node.node_id).order_by("-time").first()

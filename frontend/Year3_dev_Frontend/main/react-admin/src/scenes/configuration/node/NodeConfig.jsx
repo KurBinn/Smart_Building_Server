@@ -232,11 +232,11 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                             roomIdForNodeConfig={roomIdForNodeConfig}
                             roomSize={roomSize}
                 /> */}
-                <Grid container>
-                    <Grid item xs = {5}>
+                <Grid container spacing={2} sx={{ mt: 1 }}>
+                    <Grid item xs={12} md={5}>
                         <Grid container direction="column" gap ={2}>
                             <Grid item>
-                                <TableContainer sx={{ maxWidth: "580px", overflowX: "auto", backgroundColor: "white",  height: "600px", overflowY: "auto", border: "1px solid black", borderRadius: '15px', p:3, m:2}}>
+                                <TableContainer sx={{ width: "100%", maxWidth: "100%", overflowX: "auto", backgroundColor: "white", height: { xs: "360px", md: "min(52vh, 560px)" }, overflowY: "auto", border: "1px solid black", borderRadius: '15px', p:{ xs: 1, md: 2 }}}>
                                     <Header title={`All node records in room ${roomIdForNodeConfig}`} fontSize="20px"/>
                                     <Table size="small">
                                         <TableHead>
@@ -305,17 +305,17 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs = {7}>
+                    <Grid item xs={12} md={7}>
                         <Grid container direction="column" gap ={2}>
-                            <Grid item sx={{ height: "900px", width:"880px"}}>
+                            <Grid item sx={{ height: { xs: "70vh", md: "calc(100vh - 190px)" }, minHeight: { xs: 520, md: 620 }, width:"100%"}}>
                                 <Options room_id={roomIdForNodeConfig}
                                 callbackSetSignIn={callbackSetSignIn}
                                 configurationNodeAll={configurationNodeAll}
                                 setListNode = {setListNode}
                                 setSeparate = {setSeparate}
                                 isImageFetched = {isImageFetched}
-                                widthMap="600px"
-                                heightMap="800px"
+                                widthMap="100%"
+                                heightMap={null}
                                 data_passed_from_landingpage={{"x_length": roomSize.x,"y_length": roomSize.y}}
                                 />
                             </Grid>
