@@ -1,4 +1,4 @@
-import {Typography,Paper, InputLabel, TextField, Grid, Button, Box, Dialog, DialogContent, DialogContentText, DialogTitle, Select, MenuItem} from "@mui/material"
+import {Typography,Paper, InputLabel, TextField, Grid, Button, Box, Dialog, DialogContent, DialogContentText, DialogTitle, Select, MenuItem, useTheme} from "@mui/material"
 import { useState } from "react";
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import CloseIcon from '@mui/icons-material/Close';
@@ -9,6 +9,7 @@ import ImageResult from "./ImageResult";
 const nameAlgorithm = ["FOA", "NOA"]
 
 export default function Algorithm({roomIdForNodeConfig}) {
+  const theme = useTheme();
   const [algorithm, setAlgorithm] = useState("FOA")
   const [dataRoom, setData] = useState(null)
   const [open, setOpen] = useState(false)
@@ -63,14 +64,13 @@ export default function Algorithm({roomIdForNodeConfig}) {
 };
   return (
     <Grid>
-          <Paper sx={{mt:2, p:2, width: "100%", maxWidth: "100%", height: { xs: "auto", md: "min(48vh, 560px)" }, overflowY: "auto", border: "1px solid black", borderRadius: '15px', }}>
-      <Typography variant="h2" align="center" fontWeight="bold">
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, width: "100%", maxWidth: "100%", minHeight: { xs: 260, md: 300 }, maxHeight: { md: "clamp(320px, 42vh, 520px)" }, overflowY: "auto", border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', boxShadow: 0, bgcolor: "background.paper" }}>
+      <Typography align="center" fontWeight="bold" sx={{ fontSize: { xs: "20px", md: "24px" } }}>
         Coverage Optimization Algorithm
       </Typography>
       <Button
             startIcon={<PermDataSettingIcon />}
             sx={{
-                backgroundColor: "black",
                 fontSize: "10px",
                 fontWeight: "bold",
                 padding: "5px 12px",
@@ -90,12 +90,8 @@ export default function Algorithm({roomIdForNodeConfig}) {
           onClose={handleClose}
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
-          sx={{
-            "& .MuiDialog-container": {
-                alignItems: "center",
-                justifyContent: "flex-start",
-            },
-        }}
+        fullWidth
+        maxWidth="sm"
           >
             <DialogTitle id="alert-dialog-title">
               <Box
@@ -160,12 +156,12 @@ export default function Algorithm({roomIdForNodeConfig}) {
                   height: "30px",
                   width: "100px",
                   mb: 2,
-                  backgroundColor: "black",
-                  color:"white",
+                  color:"primary.contrastText",
                   "&:hover":{
-                    backgroundColor: "grey",
+                    backgroundColor: "primary.dark",
                   }
                 }}
+                variant="contained"
               >
                 SUBMIT
               </Button>

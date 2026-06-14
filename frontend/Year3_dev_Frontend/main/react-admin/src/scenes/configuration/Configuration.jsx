@@ -22,15 +22,16 @@ export default function Configuration() {
         1: <NodeConfig roomIdForNodeConfig={roomIdForNodeConfig} setConfig={setConfig} roomSize={roomSize}/>
     };
     return (
-        <Container maxWidth="2000px"
+        <Container
+            maxWidth={false}
+            disableGutters
             sx={{
-                marginTop: '0px',
-                // boxShadow: 1,
-                // borderRadius: '5px', 
+                minHeight: "100%",
                 bgcolor: theme.palette.background.default,
+                px: { xs: 1.5, md: 2.5 },
+                py: { xs: 1.5, md: 2 },
             }}
         >
-            <Box p="20px" />
             {
                 dict[config]
             }

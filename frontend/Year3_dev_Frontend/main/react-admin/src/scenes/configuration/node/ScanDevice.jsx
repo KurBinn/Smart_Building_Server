@@ -6,7 +6,7 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Header from '../../../components/Header';
-import { Container,Button } from '@mui/material';
+import { Container,Button, useTheme } from '@mui/material';
 import { TableContainer } from "@mui/material";
 import { host } from '../../../App';
 import verify_and_get_data from '../../../function/fetchData';
@@ -15,6 +15,7 @@ import verifyAccessToken from '../../../function/verifyAccessToken';
 import verifyRefreshToken from '../../../function/verifyRefreshToken';
 
 export default function ScanDevice({roomIdForNodeConfig}) {
+  const theme = useTheme();
   const callbackSetSignIn = useContext(UserContext);
   const api = `http://${host}/api/all_scan_device?room_id=${roomIdForNodeConfig}`
   const backend_host = host;
@@ -170,21 +171,23 @@ export default function ScanDevice({roomIdForNodeConfig}) {
     return () => clearInterval(timer);
   },[])
   return (
-  <TableContainer sx={{ maxWidth: "880px", overflowX: "auto", backgroundColor: "white", height:"340px",border: "1px solid black", borderRadius: '15px',p:2, alignItems: 'center', justifyContent: 'center',}} >
+  <TableContainer sx={{ width: "100%", overflowX: "auto", bgcolor: "background.paper", height: { xs: "300px", md: "clamp(280px, 32vh, 380px)" }, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', p:{ xs: 1, md: 2 }, alignItems: 'center', justifyContent: 'center',}} >
     <Header title={`Unprovisioned device in room ${roomIdForNodeConfig}`} fontSize="20px"/>
-    <Table size="small">
+    <Table size="small" stickyHeader>
         <TableHead>
             <TableRow>
-                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Device Name</TableCell>
-                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Mac Address</TableCell>
-                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>UUID</TableCell>
-                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Bearer Type</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.paper" }}>Device Name</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.paper" }}>Mac Address</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.paper" }}>UUID</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.paper" }}>Bearer Type</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.paper" }}>Accept</TableCell>
+                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.paper" }}>Delete</TableCell>
             </TableRow>
         </TableHead>
         <TableBody>
 
         { scanNodeData && scanNodeData.map((node, index) => (
-        <TableRow key={index}>
+        <TableRow key={index} hover>
           <TableCell sx={{ fontWeight: 400, fontSize: "13px" }}>{node.device_name}</TableCell>
           <TableCell sx={{ fontWeight: 400, fontSize: "13px" }}>{node.mac}</TableCell>
           <TableCell sx={{ fontWeight: 400, fontSize: "13px" }}>{node.uuid}</TableCell>

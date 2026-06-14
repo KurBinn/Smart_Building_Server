@@ -1,11 +1,11 @@
-import { React, useEffect, useState } from "react";
+import { React, useEffect, useCallback, useState } from "react";
 import { Grid, Typography, useTheme } from "@mui/material";
 import { host } from "../App";
 import { useTranslation } from "react-i18next";
 import "../utils/i18n";
 import verify_and_get_data from "../function/fetchData";
 import { getAqiRating, normalizeAqiValue, NO_AQI_RATING } from "../utils/aqi";
-const AQI = ({room_id, callbackSetSignIn}) =>
+const AQI = ({ room_id, callbackSetSignIn, time_delay = 0 }) =>
 {
     const [aqi, setAqi] = useState({
         "level": NO_AQI_RATING.level,
@@ -17,7 +17,7 @@ const AQI = ({room_id, callbackSetSignIn}) =>
     const theme = useTheme();
     const {t} = useTranslation()
 
-    const fetch_data_function = async (api, access_token) =>
+    const fetch_data_function = useCallback(async (api, access_token) =>
     {
 
         const headers = 
@@ -64,11 +64,21 @@ const AQI = ({room_id, callbackSetSignIn}) =>
             };
             setAqi(new_data);   
         }
-    }
+    }, []);
     
     useEffect(()=>{
         verify_and_get_data(fetch_data_function, callbackSetSignIn, host, url);
-    }, [callbackSetSignIn, url]);
+
+        if (!time_delay) {
+            return undefined;
+        }
+
+        const timer = setInterval(() => {
+            verify_and_get_data(fetch_data_function, callbackSetSignIn, host, url);
+        }, time_delay);
+
+        return () => clearInterval(timer);
+    }, [callbackSetSignIn, fetch_data_function, time_delay, url]);
 
     return (
         <Grid container display="flex" flexDirection="column" justifyItems='center' textAlign='center'>

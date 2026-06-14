@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import verify_and_get_data from "../../../function/fetchData";
 import { host } from "../../../App";
-import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions} from "@mui/material";
+import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, useTheme} from "@mui/material";
 import AirIcon from '@mui/icons-material/Air';
 import Header from "../../Header";
 
-function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, selectFunction, disabled = false}) {
+function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, selectFunction, disabled = false, refreshInterval = 30000}) {
   const [speed, setSpeed] = useState(NaN);
   const [mode, setMode] = useState("NaN");
   const [updatedAt, setUpdatedAt] = useState(0);
   const [open, setOpen] = useState(false);
+  const theme = useTheme();
 
   const url = idNode ? `http://${host}/api/actuator_status?room_id=${room_id}&node_id=${idNode}` : null;
 
@@ -75,9 +76,9 @@ function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, 
         verify_and_get_data(getStatusActuator, callbackSetSignIn, host, url);
         const timer = setInterval(()=>{
             verify_and_get_data(getStatusActuator, callbackSetSignIn, host, url);
-        }, 30000);
+        }, refreshInterval);
         return () => clearInterval(timer)
-    },[url, disabled, callbackSetSignIn, setStatus, getStatusActuator]);
+    },[url, disabled, callbackSetSignIn, setStatus, getStatusActuator, refreshInterval]);
 
   const formatUpdatedAt = (timestamp) => {
     if (!timestamp) return "No data";
@@ -101,8 +102,12 @@ function StatusActuator({room_id, callbackSetSignIn, idNode, status, setStatus, 
               width: '50px',
               height: '60px',
               borderRadius: '50%',
-              border: "solid 2px",
-              backgroundColor: disabled || !idNode ? 'white' : (!status ? 'red' : "green"),
+              border: `2px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
+              color: disabled || !idNode ? theme.palette.text.secondary : "#ffffff",
+              backgroundColor: disabled || !idNode ? theme.palette.background.surfaceRaised || theme.palette.background.paper : (!status ? '#dc2626' : "#059669"),
+              "&:hover": {
+                backgroundColor: disabled || !idNode ? theme.palette.background.surfaceRaised || theme.palette.background.paper : (!status ? '#b91c1c' : "#047857"),
+              },
             }}
             disabled={disabled || !idNode}
             onClick={()=>setOpen(true)}

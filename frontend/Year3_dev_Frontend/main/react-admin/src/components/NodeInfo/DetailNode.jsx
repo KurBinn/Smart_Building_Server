@@ -3,7 +3,7 @@ import { Grid } from '@mui/material'
 import SensorInfo from './SensorInfo';
 import ActuatorInfo from './ActuatorInfo';
 
-function DetailNode({room_id, callbackSetSignIn, listNode}) {
+function DetailNode({room_id, callbackSetSignIn, listNode, refreshInterval}) {
   const sensors = listNode.filter((node) => node.type === "sensor")
   const actuators = listNode.filter((node) => node.type === "actuator")
   return (
@@ -28,6 +28,7 @@ function DetailNode({room_id, callbackSetSignIn, listNode}) {
           room_id = {room_id}
           callbackSetSignIn = {callbackSetSignIn}
           sensors = {sensors}
+          refreshInterval = {refreshInterval}
         />
       </Grid>
 
@@ -36,6 +37,7 @@ function DetailNode({room_id, callbackSetSignIn, listNode}) {
           room_id = {room_id}
           callbackSetSignIn = {callbackSetSignIn}
           actuators = {actuators}
+          refreshInterval = {refreshInterval}
         />
       </Grid>
   </Grid>

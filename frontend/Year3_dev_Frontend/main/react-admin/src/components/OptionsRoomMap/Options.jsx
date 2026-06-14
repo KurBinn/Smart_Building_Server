@@ -42,23 +42,24 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
         width: { xs: "calc(50% - 10px)", sm: "120px", lg: "140px" },
         minWidth: { xs: "96px", sm: "120px" },
         height: { xs: "44px", md: "48px", xl: "56px" },
-        backgroundColor: "white",
+        backgroundColor: theme.palette.background.surfaceRaised || theme.palette.background.paper,
+        color: theme.palette.text.primary,
         fontSize: { xs: "14px", md: "16px", xl: "18px" },
         fontWeight: "bold",
         padding: "5px 10px",
         margin: "5px",
-        border: "2px solid black",
+        border: `1px solid ${theme.palette.background.border || theme.palette.divider}`,
         borderRadius: "5px",
-        "&:hover": { backgroundColor: "#EEEEEE" }
+        "&:hover": { backgroundColor: theme.palette.action.hover }
     };
 
     return (
         <Box
             sx={{
                 boxShadow: 0,
-                border: "1px solid black",
+                border: `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
                 borderRadius: '15px',
-                backgroundColor: theme.palette.background.paper,
+                backgroundColor: theme.palette.background.surface || theme.palette.background.paper,
                 p:1
             }}
             width="100%" height="100%"

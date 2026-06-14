@@ -1,4 +1,4 @@
-import { Grid, Typography, Select, MenuItem, InputLabel} from "@mui/material";
+import { Grid, Typography, Select, MenuItem, InputLabel, useTheme} from "@mui/material";
 import { useState, useEffect } from 'react';
 import Header from "../../components/Header";
 import StatusActuator from './OptionsActuator/StatusActuator';
@@ -7,13 +7,21 @@ import SetTimer from './OptionsActuator/SetTimer';
 import { useTranslation } from 'react-i18next';
 import SetLight from './OptionsActuator/SetLight';
 
-function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
+function ActuatorInfo({room_id, callbackSetSignIn, actuators, refreshInterval = 30000}) {
   const {t} = useTranslation()
   const [status, setStatus] = useState(false);
   const [idNode, setIdNode] = useState("")
   const [selectFunction, setSelectFunction] = useState("Air")
   const [type, setType] = useState("Panasonic")
   const hasActuator = actuators.length > 0;
+  const theme = useTheme();
+  const sectionSx = {
+    border: `1px solid ${theme.palette.background.border || theme.palette.divider}`,
+    borderRadius: '8px',
+    backgroundColor: theme.palette.background.paper,
+    padding: 1,
+    minWidth: 0,
+  };
   useEffect(() => {
     if (actuators.length > 0) {
       setIdNode(actuators[0].id);
@@ -24,7 +32,12 @@ function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
   }, [actuators]);
   return (
     <Grid container item textAlign='center'
-      sx={{ border: "1px solid black", borderRadius: "15px", p: 0.75, backgroundColor: "background.paper" }}
+      sx={{
+        border: `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
+        borderRadius: "15px",
+        p: 0.75,
+        backgroundColor: theme.palette.background.surface || theme.palette.background.paper,
+      }}
     >
 
       <Grid item xs={12} sm={12} md={12} textAlign="center" justifyContent='center' >
@@ -34,7 +47,7 @@ function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
       <Grid item xs={12}>
         <Grid container spacing={1}>
           <Grid item>
-            <InputLabel sx={{ fontSize: "14px", color: "black",  marginTop: "0px", textAlign: "center", justifyContent: "center", fontWeight: "bold"}}> Node Id </InputLabel>
+            <InputLabel sx={{ fontSize: "14px", marginTop: "0px", textAlign: "center", justifyContent: "center", fontWeight: "bold"}}> Node Id </InputLabel>
             <Select
               value={idNode}
               onChange={(e) => setIdNode(e.target.value)}
@@ -49,7 +62,7 @@ function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
             </Select>
           </Grid>
           <Grid item>
-            <InputLabel sx={{ fontSize: "14px", color: "black",  marginTop: "0px", textAlign: "center", justifyContent: "center", fontWeight: "bold"}}> Function </InputLabel>
+            <InputLabel sx={{ fontSize: "14px", marginTop: "0px", textAlign: "center", justifyContent: "center", fontWeight: "bold"}}> Function </InputLabel>
             <Select
               value={hasActuator ? selectFunction : ""}
               onChange={(e) => setSelectFunction(e.target.value)}
@@ -80,11 +93,7 @@ function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
       </Grid>
 
       <Grid item container direction='row' xs ={12} sx={{ mt: 1 }} spacing={1} justifyContent="space-between">
-        <Grid item xs={12} sm={5.9} md={12} lg={5.9} sx={{
-            border: '1px solid black',
-            borderRadius: '8px',
-            padding: 1,
-          }}>
+        <Grid item xs={12} sm={5.9} md={12} lg={5.9} sx={sectionSx}>
           <Header title = "Actuator Status" fontSize="18px"/>
             <StatusActuator
               room_id={room_id}
@@ -94,15 +103,12 @@ function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
               setStatus={setStatus}
               selectFunction={selectFunction}
               disabled={!hasActuator}
+              refreshInterval={refreshInterval}
             />
         </Grid>
         {selectFunction === "Air"?
         <Grid item xs={12} sm={5.9} md={12} lg={5.9}
-        sx={{
-          border: '1px solid black',
-          borderRadius: '8px',
-          padding: 1
-        }}>
+        sx={sectionSx}>
           <Header title = "Set Fan Mode" fontSize="18px"/>
           <SetTemperature
             room_id={room_id}
@@ -114,11 +120,7 @@ function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
           />
         </Grid>:
         <Grid item xs={12} sm={5.9} md={12} lg={5.9}
-        sx={{
-          border: '1px solid black',
-          borderRadius: '8px',
-          padding: 1
-        }}
+        sx={sectionSx}
         >
         <Header title = "Set Light" fontSize="18px"/>
         <SetLight
@@ -134,8 +136,7 @@ function ActuatorInfo({room_id, callbackSetSignIn, actuators}) {
       </Grid>
     
       <Grid container xs ={12} sx={{ mt:1,
-              border: '1px solid black',
-              borderRadius: '8px',
+              ...sectionSx,
               padding: 1.5,
               }}
               justifyContent="center">

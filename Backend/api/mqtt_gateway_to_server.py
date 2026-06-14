@@ -38,6 +38,55 @@ def _to_int(value):
     except (TypeError, ValueError):
         return None
 
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def _normalize_dust_mg_m3(value):
+    dust = _to_float(value)
+    if dust is None or dust < 0:
+        return -1
+
+    # PM2.5 sensors usually publish ug/m3 values such as 22. The database and
+    # room UI use mg/m3, so keep sub-1 readings as mg/m3 and convert larger
+    # readings from ug/m3.
+    if dust > 1:
+        return round(dust / 1000, 6)
+    return dust
+
+def _sensor_csv_record(operator, info, received_time):
+    return {
+        "received_time": received_time,
+        "operator": operator,
+        "mac_address": info.get("mac_address", ""),
+        "node_id": info.get("node_id", ""),
+        "room_id": info.get("room_id", ""),
+        "packet_time": info.get("time", ""),
+        "packet_id": info.get("packet_id", ""),
+        "temperature": info.get("temperature", info.get("temp", "")),
+        "humidity": info.get("humidity", info.get("hum", "")),
+        "protocol": info.get("protocol", ""),
+        "co2": info.get("co2", ""),
+        "dust_density": info.get("dust_density", info.get("dust", "")),
+        "motion": info.get("motion", ""),
+    }
+
+def _actuator_csv_record(operator, info, received_time):
+    act = info.get("actuator_data") or info
+    return {
+        "received_time": received_time,
+        "operator": operator,
+        "mac_address": info.get("mac_address", ""),
+        "node_id": info.get("node_id", ""),
+        "room_id": info.get("room_id", ""),
+        "packet_time": info.get("time", ""),
+        "protocol": info.get("protocol", ""),
+        "state": act.get("state", act.get("status", "")),
+        "pwm": act.get("pwm", ""),
+    }
+
 def _room_exists(cursor, room_id):
     room_id = _to_int(room_id)
     if room_id is None:
@@ -257,12 +306,13 @@ def DataFromSensorNode():
                                 return info[k]
                         return -1
 
+                    dust_mg_m3 = _normalize_dust_mg_m3(_get("dust", "dust_density"))
                     sensor_values = (
                         _get("co2"),
                         _get("temp", "temperature"),
                         _get("hum",  "humidity"),
                         _get("light"),
-                        _get("dust", "dust_density"),
+                        dust_mg_m3,
                         _get("sound"),
                         _get("red"),
                         _get("green"),
@@ -277,22 +327,7 @@ def DataFromSensorNode():
                     cursor.execute(query, record)
                     print("Successfully insert RawSensorMonitor to PostgreSQL")
                     append_sensor_record(
-                        {
-                            "time": server_received_time,
-                            "room_id": resolved_room_id,
-                            "node_id": payload_node_id,
-                            "co2": sensor_values[0],
-                            "temp": sensor_values[1],
-                            "hum": sensor_values[2],
-                            "light": sensor_values[3],
-                            "dust": sensor_values[4],
-                            "sound": sensor_values[5],
-                            "red": sensor_values[6],
-                            "green": sensor_values[7],
-                            "blue": sensor_values[8],
-                            "tvoc": sensor_values[9],
-                            "motion": sensor_values[10],
-                        }
+                        _sensor_csv_record(data_receive["operator"], info, server_received_time)
                     )
                     print("Successfully append sensor_data.csv")
 
@@ -313,15 +348,7 @@ def DataFromSensorNode():
                         cursor.execute(actuator_query, actuator_record)
                         print("Successfully insert RawActuatorMonitor from sensor_data to PostgreSQL")
                         append_actuator_record(
-                            {
-                                "time": server_received_time,
-                                "room_id": resolved_room_id,
-                                "node_id": payload_node_id,
-                                "function": actuator_record[2],
-                                "current_value": actuator_record[3],
-                                "state": actuator_record[4],
-                                "mode": actuator_record[5],
-                            }
+                            _actuator_csv_record(data_receive["operator"], info, server_received_time)
                         )
                         print("Successfully append actuator_data.csv from sensor_data")
 
@@ -434,15 +461,7 @@ def DataFromActuator():
                     cursor.execute(query, record)
                     print("Successfully insert RawActuatorMonitor to PostgreSQL")
                     append_actuator_record(
-                        {
-                            "time": server_received_time,
-                            "room_id": record[0],
-                            "node_id": record[1],
-                            "function": record[2],
-                            "current_value": record[3],
-                            "state": record[4],
-                            "mode": record[5],
-                        }
+                        _actuator_csv_record(data_receive["operator"], info, server_received_time)
                     )
                     print("Successfully append actuator_data.csv")
                     cursor.close()

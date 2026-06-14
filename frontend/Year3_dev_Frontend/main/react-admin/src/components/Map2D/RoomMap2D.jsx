@@ -10,7 +10,7 @@ import { host } from '../../App';
 import verifyAccessToken from '../../function/verifyAccessToken';
 import verifyRefreshToken from '../../function/verifyRefreshToken';
 import { Box3 } from "three";
-import { Tooltip, Grid, Typography, Box } from "@mui/material";
+import { Tooltip, Grid, Typography, Box, useTheme } from "@mui/material";
 import { DEFAULT_ROOM_IMAGE, sanitizeRoomImage } from "../../utils/roomImage";
 
 export let data_max_min = []
@@ -74,6 +74,7 @@ function Point({ id, x, y, type, status, addSelectedNode, callbackSetSignIn }) {
   const backend_host = host;
   const api = `http://${backend_host}/api/employee_node`;
   const [clicked, setClicked] = useState(false);
+  const theme = useTheme();
 
   const ListNodeUserPermission = async (url, access_token) => {
     const headers = {
@@ -115,7 +116,7 @@ function Point({ id, x, y, type, status, addSelectedNode, callbackSetSignIn }) {
           }
         }}
         style={{
-          backgroundColor: type === "sensor" ? "white" : "aqua",
+          backgroundColor: type === "sensor" ? "#f8fafc" : "#22d3ee",
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
@@ -123,7 +124,7 @@ function Point({ id, x, y, type, status, addSelectedNode, callbackSetSignIn }) {
           width: clicked ? "52px" : "40px",
           height: clicked ? "52px" : "40px",
           cursor: "pointer",
-          border: "2px solid black",
+          border: `2px solid ${theme.palette.mode === "dark" ? "#0f172a" : "#111827"}`,
           transition: "transform 0.2s, width 0.2s, height 0.2s",
           transform: clicked ? "scale(1.3)" : "scale(1)",
           position: 'relative'
@@ -182,6 +183,7 @@ function ClickCoordinates({ clickPos }) {
 }
 
 function RoomMap2D({ url, configurationNodeAll, setListNode, callbackSetSignIn, setSeparate, widthMap, heightMap, statusConnections, data_passed_from_landingpage }) {
+  const theme = useTheme();
   const [clickPos, setClickPos] = useState(null);
   const [selectedNodes, setSelectedNodes] = useState([]);
   const safeImageUrl = sanitizeRoomImage(url) || DEFAULT_ROOM_IMAGE;
@@ -238,13 +240,14 @@ function RoomMap2D({ url, configurationNodeAll, setListNode, callbackSetSignIn, 
 
   return (
     <Box sx={{
-      border: "1px solid black",
+      border: `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
       borderRadius: "12px",
       overflow: "hidden",
       width: widthMap ? widthMap : "100%",
       height: heightMap ? heightMap : "100%",
-      minHeight: { xs: "420px", md: "0" },
+      minHeight: { xs: "360px", md: "0" },
       flex: 1,
+      bgcolor: theme.palette.mode === "dark" ? "#111a24" : "#f8fafc",
     }}>
       <Canvas orthographic camera={{ position: [0, 0, 10], up: [0, 1, 0], near: 0.1, far: 100 }}>
       <OrbitControls minZoom={200} maxZoom={600} />

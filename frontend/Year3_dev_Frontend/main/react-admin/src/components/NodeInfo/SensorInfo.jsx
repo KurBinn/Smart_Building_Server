@@ -25,7 +25,7 @@ const iconMap = {
 };
 
 
-function SensorInfo({room_id, callbackSetSignIn, sensors}) {
+function SensorInfo({room_id, callbackSetSignIn, sensors, refreshInterval = 30000}) {
     const backend_host = host
     const [dataSensors, setDataSensors] = useState([])
     const api = `http://${backend_host}/api/raw_data_all_sensor?room_id=${room_id}`
@@ -127,17 +127,21 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
 
 
     useEffect(()=>{
-    average_data(dataSensors, sensors);
     verify_and_get_data(getRawDataSensors, callbackSetSignIn, backend_host, api);
     const timer = setInterval(() => {
         verify_and_get_data(getRawDataSensors, callbackSetSignIn, backend_host, api);
-    }, 30000);
+    }, refreshInterval);
     return () => clearInterval(timer);
-    },[api, backend_host, callbackSetSignIn])
+    },[api, backend_host, callbackSetSignIn, refreshInterval])
   
   return (
     <Grid container item textAlign='center' paddingTop={preferMd ? 0 : 0.5} justifyContent='center'
-      sx={{ border: "1px solid black", borderRadius: "15px", p: 0.75, backgroundColor: theme.palette.background.paper }}
+      sx={{
+        border: `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
+        borderRadius: "15px",
+        p: 0.75,
+        backgroundColor: theme.palette.background.surface || theme.palette.background.paper,
+      }}
     >
         <Grid item container xs={12} sm={12} md={12} textAlign="center" justifyContent='center' my={0.25} mb={1}>
           <Typography sx={{fontWeight: "bold", fontSize: "20px"}}> Average Data Sensor Node </Typography>
@@ -150,7 +154,14 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
                     <Grid item xs={4}>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxShadow: 0 }}>
-                    <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '6px'}} sx={{ boxShadow: "0px 0px 0px 0px", border: `none`}}>
+                    <Paper
+                      style={{ flex: 1, padding: '6px'}}
+                      sx={{
+                        boxShadow: 0,
+                        border: `1px solid ${theme.palette.background.border || theme.palette.divider}`,
+                        backgroundColor: theme.palette.background.paper,
+                      }}
+                    >
                         <IconComponent style={{ fontSize: '2.25rem' }} />
                         <Grid container display="flex" flexDirection="column" justifyItems='center' textAlign='center'>
                             <Grid container item justifyContent='center' alignContent='center'>
@@ -168,7 +179,14 @@ function SensorInfo({room_id, callbackSetSignIn, sensors}) {
                   else return (
                     <Grid item xs={4}>
                     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', boxShadow: 0 }}>
-                    <Paper style={{ flex: 1, backgroundColor: theme.palette.background.paper, padding: '6px'}} sx={{ boxShadow: "0px 0px 0px 0px", border:"none"}}>
+                    <Paper
+                      style={{ flex: 1, padding: '6px'}}
+                      sx={{
+                        boxShadow: 0,
+                        border: `1px solid ${theme.palette.background.border || theme.palette.divider}`,
+                        backgroundColor: theme.palette.background.paper,
+                      }}
+                    >
                         <IconComponent style={{ fontSize: '2.25rem' }} />
                         <Grid container display="flex" flexDirection="column" justifyItems='center' textAlign='center'>
                             <Grid container item justifyContent='center' alignContent='center'>

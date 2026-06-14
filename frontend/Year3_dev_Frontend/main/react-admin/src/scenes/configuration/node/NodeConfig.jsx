@@ -33,6 +33,7 @@ import Chip from '@mui/material/Chip';
 
 export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
     
+    const theme = useTheme();
     const callbackSetSignIn = useContext(UserContext);
     const backend_host = host;
     const api = `http://${host}/api/configuration_node?room_id=${roomIdForNodeConfig}`
@@ -47,6 +48,12 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
         "fan": "Fan",
         "actuator": "Actuator",
     }
+    const panelSx = {
+        bgcolor: theme.palette.background.surface || theme.palette.background.paper,
+        border: `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
+        borderRadius: "12px",
+        boxShadow: 0,
+    };
 
     const getConfigurationNodeAllData = async (url, access_token) => 
     {
@@ -184,11 +191,11 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
             <Container sx={{ p: 0, m: 0, width: "100%" }}
                         maxWidth={false}
                         disableGutters>
-                <Grid container gap = {2}>
+                <Grid container spacing={1.5} sx={{ mb: 1.5 }}>
+                    <Grid item>
                     <Button
                         startIcon={<ArrowBackIcon />}
                         sx={{
-                            backgroundColor: "black",
                             fontSize: "10px",
                             fontWeight: "bold",
                             padding: "5px 12px",
@@ -201,6 +208,7 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                     >
                         Go Back
                     </Button>
+                    </Grid>
                     <input
                         type="file"
                         accept="image/*"
@@ -208,22 +216,20 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                         style={{ display: "none" }}
                         id="upload"
                     />
-                    <label htmlFor="upload">
+                    <Grid item component="label" htmlFor="upload">
                     <Button
                         component="span"
                         startIcon={<ArrowDownwardIcon />}
                         sx={{
-                            backgroundColor: "blue",
                             fontSize: "10px",
                             fontWeight: "bold",
                             padding: "5px 12px",
-                            "&:hover": {backgroundColor: "#3366FF"},
                         }}
                         variant="contained"
                     >
                         Import Image Room
                     </Button>
-                    </label>
+                    </Grid>
                 </Grid>
                 {/* Protocol Wifi*/}
                 {/* <NodeChange configurationNodeAll={configurationNodeAll} 
@@ -232,31 +238,33 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                             roomIdForNodeConfig={roomIdForNodeConfig}
                             roomSize={roomSize}
                 /> */}
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                    <Grid item xs={12} md={5}>
-                        <Grid container direction="column" gap ={2}>
-                            <Grid item>
-                                <TableContainer sx={{ width: "100%", maxWidth: "100%", overflowX: "auto", backgroundColor: "white", height: { xs: "360px", md: "min(52vh, 560px)" }, overflowY: "auto", border: "1px solid black", borderRadius: '15px', p:{ xs: 1, md: 2 }}}>
+                <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
+                    <Grid item xs={12} lg={5} sx={{ minWidth: 0 }}>
+                        <Grid container direction="column" spacing={2} sx={{ minWidth: 0 }}>
+                            <Grid item sx={{ minWidth: 0, width: "100%", maxWidth: "100%" }}>
+                                <TableContainer sx={{ ...panelSx, width: "100%", maxWidth: "100%", overflowX: "auto", height: { xs: "340px", md: "clamp(340px, 38vh, 520px)" }, overflowY: "auto", p:{ xs: 1, md: 2 }}}>
                                     <Header title={`All node records in room ${roomIdForNodeConfig}`} fontSize="20px"/>
-                                    <Table size="small">
+                                    <Table size="small" stickyHeader sx={{ minWidth: 760 }}>
                                         <TableHead>
                                             <TableRow>
-                                                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Node id</TableCell>
-                                                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Position x</TableCell>
-                                                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Position y</TableCell>
-                                                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Function</TableCell>
-                                                <TableCell sx={{"font-weight": "600", "font-size": "15px"}}>Mac Address</TableCell>
-                                                <TableCell sx={{"font-weight": "600", "font-size": "14px"}}>Status</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.surfaceRaised" }}>Node id</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.surfaceRaised" }}>Position x</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.surfaceRaised" }}>Position y</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.surfaceRaised" }}>Function</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "15px", bgcolor: "background.surfaceRaised" }}>Mac Address</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "14px", bgcolor: "background.surfaceRaised" }}>Status</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "14px", bgcolor: "background.surfaceRaised" }}>Setting</TableCell>
+                                                <TableCell sx={{ fontWeight: 700, fontSize: "14px", bgcolor: "background.surfaceRaised" }}>Delete</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
                                         {configurationNodeAll.map((row) => (
-                                            <TableRow key={row.id}>
-                                                <TableCell sx={{"font-weight": "400", "font-size": "13px"}}>{row.node_id}</TableCell>
-                                                <TableCell sx={{"font-weight": "400", "font-size": "13px"}}>{row.x_axis}</TableCell>
-                                                <TableCell sx={{"font-weight": "400", "font-size": "13px"}}>{row.y_axis}</TableCell>
-                                                <TableCell sx={{"font-weight": "400", "font-size": "13px"}}>{dict_function[row.function]}</TableCell>
-                                                <TableCell sx={{"font-weight": "400", "font-size": "13px"}}>{row.mac}</TableCell>
+                                            <TableRow key={row.id} hover>
+                                                <TableCell sx={{ fontWeight: 400, fontSize: "13px" }}>{row.node_id}</TableCell>
+                                                <TableCell sx={{ fontWeight: 400, fontSize: "13px" }}>{row.x_axis}</TableCell>
+                                                <TableCell sx={{ fontWeight: 400, fontSize: "13px" }}>{row.y_axis}</TableCell>
+                                                <TableCell sx={{ fontWeight: 400, fontSize: "13px" }}>{dict_function[row.function]}</TableCell>
+                                                <TableCell sx={{ fontWeight: 400, fontSize: "13px", minWidth: 150 }}>{row.mac}</TableCell>
                                                 <TableCell>
                                                 <Chip
                                                     label={row.status === "sync" ? "Active" : "Inactive"}
@@ -266,12 +274,7 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                                                 </TableCell>
 
                                                 <TableCell
-                                                sx={{
-                                                    width: { xs:"100px", sm: "100px", md: "100px", lg: "100px" },
-                                                        "& .MuiInputBase-root": {
-                                                            height: 35
-                                                        },
-                                                        }}
+                                                sx={{ width: 100 }}
                                                 >
                                                     <DialogConfirmSettingNode callbackSetSignIn={callbackSetSignIn} 
                                                         NodeConfigLoading={{0: isLoadingNodeConfig, 1: setIsLoadingNodeConfig}}
@@ -281,12 +284,7 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                                                         />
                                                 </TableCell>
                                                 <TableCell
-                                                sx={{
-                                                    width: { xs:"100px", sm: "100px", md: "100px", lg: "100px" },
-                                                        "& .MuiInputBase-root": {
-                                                            height: 35
-                                                        },
-                                                        }}
+                                                sx={{ width: 100 }}
                                                 >
                                                     <DialogConfirmDeleteNode callbackSetSignIn={callbackSetSignIn} NodeConfigLoading={{0: isLoadingNodeConfig, 1: setIsLoadingNodeConfig}} id={row.node_id}/>
                                                 </TableCell>
@@ -300,14 +298,14 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
 
                                 </TableContainer>
                             </Grid>
-                            <Grid item>
+                            <Grid item sx={{ minWidth: 0, width: "100%", maxWidth: "100%" }}>
                                 <Algorithm roomIdForNodeConfig={roomIdForNodeConfig}/>
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={12} md={7}>
-                        <Grid container direction="column" gap ={2}>
-                            <Grid item sx={{ height: { xs: "70vh", md: "calc(100vh - 190px)" }, minHeight: { xs: 520, md: 620 }, width:"100%"}}>
+                    <Grid item xs={12} lg={7} sx={{ minWidth: 0 }}>
+                        <Grid container direction="column" spacing={2} sx={{ minWidth: 0 }}>
+                            <Grid item sx={{ height: { xs: "min(70vh, 520px)", md: "clamp(420px, 54vh, 680px)" }, minHeight: { xs: 380, md: 420 }, width:"100%", minWidth: 0 }}>
                                 <Options room_id={roomIdForNodeConfig}
                                 callbackSetSignIn={callbackSetSignIn}
                                 configurationNodeAll={configurationNodeAll}
@@ -319,15 +317,13 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                                 data_passed_from_landingpage={{"x_length": roomSize.x,"y_length": roomSize.y}}
                                 />
                             </Grid>
-                            <Grid item>
+                            <Grid item sx={{ display: "flex", justifyContent: { xs: "stretch", sm: "flex-start" }, minWidth: 0 }}>
                             <Button
                                 sx={{
-                                    backgroundColor: "#2319b4",
-                                    fontSize: "20px",
+                                    fontSize: "16px",
                                     fontWeight: "bold",
                                     padding: "5px 12px",
-                                    margin: "5px",
-                                    "&:hover": { backgroundColor: "#6d65ea" }
+                                    width: { xs: "100%", sm: "auto" },
                                     }}
                                 variant="contained"
 
@@ -336,7 +332,7 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                                 SCAN DEVICE
                             </Button>
                             </Grid>
-                            <Grid item>
+                            <Grid item sx={{ minWidth: 0 }}>
                                 <ScanDevice roomIdForNodeConfig={roomIdForNodeConfig}/>
                             </Grid>
                         </Grid>

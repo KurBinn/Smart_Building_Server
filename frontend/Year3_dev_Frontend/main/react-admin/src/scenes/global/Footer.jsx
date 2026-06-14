@@ -63,7 +63,7 @@ const MapboxMap = () => {
     return () => map.remove();
   }, [mapStyle]);
 
-  return <div id="map-container" style={{ width: '200%', height: '250px', borderRadius: '10px' }} />;
+  return <div id="map-container" style={{ width: '100%', height: '250px', borderRadius: '10px', overflow: 'hidden' }} />;
 };
 
 const Footer = (props) => {
@@ -93,7 +93,7 @@ const Footer = (props) => {
             maxWidth={2000}
             component="footer"
             sx={{
-                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                borderTop: (theme) => `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
                 mt: 0, ml: 0, mr: 0,
                 py: 10,
                 backgroundColor: theme.palette.background.default
@@ -163,7 +163,7 @@ const Footer = (props) => {
                 </Box>
                 </Grid>
 
-                <Grid item xs={12} sm={12} md={6} justifyContent="left">
+                <Grid item xs={12} sm={12} md={6} justifyContent="left" sx={{ minWidth: 0 }}>
                     <Box 
                         display="flex"
                         justifyContent="center"

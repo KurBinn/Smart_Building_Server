@@ -189,14 +189,18 @@ export const themeSettings = (mode) => {
               light: colors.grey[100],
             },
             background: {
-              default: "#101418",
-              paper: "#1a222c",
+              default: "#0f141b",
+              paper: "#18212b",
+              surface: "#1f2b37",
+              surfaceRaised: "#263443",
+              border: "rgba(226, 232, 240, 0.28)",
+              borderStrong: "rgba(248, 250, 252, 0.46)",
             },
             text: {
-              primary: "#f4f7fb",
-              secondary: "#b8c2cc",
+              primary: "#f8fafc",
+              secondary: "#cbd5e1",
             },
-            divider: "rgba(226, 232, 240, 0.18)",
+            divider: "rgba(226, 232, 240, 0.28)",
             action: {
               hover: "rgba(56, 189, 248, 0.12)",
               selected: "rgba(56, 189, 248, 0.18)",
@@ -219,6 +223,10 @@ export const themeSettings = (mode) => {
             background: {
               default: colors.whiteColor[600],
               paper: colors.whiteColor[700],
+              surface: "#ffffff",
+              surfaceRaised: "#f6f8fb",
+              border: "rgba(20, 20, 20, 0.16)",
+              borderStrong: "rgba(20, 20, 20, 0.32)",
             },
             text: {
               primary: colors.grey[100],
@@ -231,7 +239,7 @@ export const themeSettings = (mode) => {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            backgroundColor: mode === "dark" ? "#101418" : colors.whiteColor[600],
+            backgroundColor: mode === "dark" ? "#0f141b" : colors.whiteColor[600],
             color: mode === "dark" ? "#f4f7fb" : colors.grey[100],
           },
         },
@@ -240,20 +248,97 @@ export const themeSettings = (mode) => {
         styleOverrides: {
           root: {
             backgroundImage: "none",
+            backgroundColor: mode === "dark" ? "#18212b" : colors.whiteColor[700],
+            borderColor: mode === "dark" ? "rgba(226, 232, 240, 0.28)" : "rgba(20, 20, 20, 0.16)",
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+            backgroundColor: mode === "dark" ? "#18212b" : "#ffffff",
+            border: `1px solid ${mode === "dark" ? "rgba(226, 232, 240, 0.28)" : "rgba(20, 20, 20, 0.14)"}`,
+          },
+        },
+      },
+      MuiTableCell: {
+        styleOverrides: {
+          root: {
+            borderColor: mode === "dark" ? "rgba(226, 232, 240, 0.22)" : "rgba(20, 20, 20, 0.14)",
+          },
+          head: {
+            color: mode === "dark" ? "#f8fafc" : colors.grey[100],
+            backgroundColor: mode === "dark" ? "#223040" : "#f3f5f8",
+          },
+          body: {
+            color: mode === "dark" ? "#e5edf6" : colors.grey[100],
+          },
+        },
+      },
+      MuiTableRow: {
+        styleOverrides: {
+          root: {
+            "&:nth-of-type(even)": {
+              backgroundColor: mode === "dark" ? "rgba(255, 255, 255, 0.025)" : "rgba(20, 20, 20, 0.025)",
+            },
+            "&:hover": {
+              backgroundColor: mode === "dark" ? "rgba(56, 189, 248, 0.10)" : "rgba(20, 20, 20, 0.05)",
+            },
+          },
+        },
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: {
+            color: mode === "dark" ? "#dbeafe" : colors.grey[200],
+            "&.Mui-focused": {
+              color: mode === "dark" ? "#7dd3fc" : colors.blueAccent[500],
+            },
+          },
+        },
+      },
+      MuiOutlinedInput: {
+        styleOverrides: {
+          root: {
+            backgroundColor: mode === "dark" ? "#111a24" : "#ffffff",
+            color: mode === "dark" ? "#f8fafc" : colors.grey[100],
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: mode === "dark" ? "rgba(226, 232, 240, 0.34)" : "rgba(20, 20, 20, 0.24)",
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: mode === "dark" ? "rgba(125, 211, 252, 0.72)" : colors.blueAccent[500],
+            },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              borderColor: mode === "dark" ? "#7dd3fc" : colors.blueAccent[500],
+            },
           },
         },
       },
       MuiMenu: {
         styleOverrides: {
           paper: {
-            border: `1px solid ${mode === "dark" ? "rgba(226, 232, 240, 0.16)" : "rgba(20, 20, 20, 0.12)"}`,
+            backgroundColor: mode === "dark" ? "#1f2b37" : "#ffffff",
+            border: `1px solid ${mode === "dark" ? "rgba(226, 232, 240, 0.34)" : "rgba(20, 20, 20, 0.12)"}`,
+          },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            backgroundColor: mode === "dark" ? "#1f2b37" : "#ffffff",
+            border: `1px solid ${mode === "dark" ? "rgba(226, 232, 240, 0.34)" : "rgba(20, 20, 20, 0.12)"}`,
           },
         },
       },
       MuiButton: {
         styleOverrides: {
+          root: {
+            textTransform: "none",
+          },
           outlined: {
-            borderColor: mode === "dark" ? "rgba(244, 247, 251, 0.45)" : "rgba(20, 20, 20, 0.35)",
+            color: mode === "dark" ? "#f8fafc" : colors.grey[100],
+            borderColor: mode === "dark" ? "rgba(244, 247, 251, 0.52)" : "rgba(20, 20, 20, 0.35)",
           },
         },
       },

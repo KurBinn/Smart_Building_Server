@@ -15,6 +15,8 @@ import DetailNode from "../../components/NodeInfo/DetailNode";
 import { DEFAULT_ROOM_IMAGE, fetchRoomImageAsDataUrl, saveRoomImage } from "../../utils/roomImage";
 
 
+const LIVE_REFRESH_MS = 5000;
+
 const Dashboard = () => {
     const backend_host = host;
     const location = useLocation();
@@ -65,9 +67,9 @@ const Dashboard = () => {
     ];
     const panelSx = {
         boxShadow: 0,
-        border: `1px solid ${theme.palette.divider}`,
+        border: `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
         borderRadius: "15px",
-        backgroundColor: theme.palette.background.paper,
+        backgroundColor: theme.palette.background.surface || theme.palette.background.paper,
     };
     const mainLayoutSx = {
         display: "grid",
@@ -185,7 +187,7 @@ const Dashboard = () => {
                             <InformationTag
                                 url={apiInformationTag}
                                 callbackSetSignIn={callbackSetSignIn}
-                                time_delay={30000}
+                                time_delay={LIVE_REFRESH_MS}
                                 room_id={room_id}
                                 setActuatorInfoOfRoom={setActuatorInfoOfRoom}
                             />
@@ -235,6 +237,7 @@ const Dashboard = () => {
                             room_id={room_id}
                             callbackSetSignIn={callbackSetSignIn}
                             listNode={visibleDetailNodes}
+                            refreshInterval={LIVE_REFRESH_MS}
                         />
                     </Box>
                 </Box>

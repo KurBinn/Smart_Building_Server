@@ -36,6 +36,21 @@ SENSOR_FUNCTIONS = ("sensor", "sensor_actuator")
 def _is_actuator_function(function):
     return function != "sensor"
 
+def _normalize_dust_mg_m3(value):
+    try:
+        dust = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    if dust < 0:
+        return None
+
+    # Current records store dust as mg/m3. Older MQTT rows may contain raw
+    # sensor ug/m3 values, so normalize them before calculating PM2.5 AQI.
+    if dust > 1:
+        return dust / 1000
+    return dust
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
@@ -351,6 +366,8 @@ def GetRoomInformation(request, *args, **kwargs):
         for data in latest_data_of_each_node_id:
             for para in parameter_key_list:
                 value = data.get(para)
+                if para == "dust":
+                    value = _normalize_dust_mg_m3(value)
                 if value is not None and value != -1:
                     sum_count[para]["sum"] += value
                     sum_count[para]["count"] += 1
@@ -713,56 +730,50 @@ def AQIdustpm2_5(request, *args, **kwargs):
             },
         ]
 
-        latest_time = int(RawSensorMonitor.objects.order_by("-time")[0].time)
+        room_sensor_query = RawSensorMonitor.objects.filter(room_id=room_id)
+        latest_sensor = room_sensor_query.order_by("-time").first()
+        if latest_sensor is None:
+            return Response(
+                {"Response": "No data available!"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        latest_time = int(latest_sensor.time)
         filter_time = latest_time - 12 * 60 * 60
         hourly_dust_data = RawSensorMonitorSerializer(
-            RawSensorMonitor.objects.filter(
-                room_id = room_id, time__gt = filter_time, dust__gt = 0.01
-            ),
+            room_sensor_query.filter(time__gt=filter_time, dust__gt=0),
             many=True,
         ).data
     
         if len(hourly_dust_data) != 0:
     
-            extracted_data = [
-                {"time": data["time"], "dust": data["dust"]}
-                for data in hourly_dust_data
-            ]
+            extracted_data = []
+            for data in hourly_dust_data:
+                dust_mg_m3 = _normalize_dust_mg_m3(data["dust"])
+                if dust_mg_m3 is not None and dust_mg_m3 > 0:
+                    extracted_data.append(
+                        {"time": int(data["time"]), "dust": dust_mg_m3}
+                    )
+
+            if len(extracted_data) == 0:
+                return Response(
+                    {"Response": "No dust data available!"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
 
             extracted_data.sort(key=lambda x: x["time"])
 
-            power_index = 0
-            pre_row = None
-            l = []
-            first_record_flag = True
-
+            latest_dust_time = extracted_data[-1]["time"]
+            weighted_sum = 0
+            weight_total = 0
+            half_life_seconds = 60 * 60
             for data in extracted_data:
-                data_time = datetime.datetime.fromtimestamp(data["time"])
-                data_hour = data_time.hour
-                if first_record_flag:
-                    pre_row = data_hour
-                    l.append({"value": data["dust"], "pow": power_index})
-                    first_record_flag = False
-                else:
-                    dif = pre_row - data_hour
-                    pre_row = data_hour
-                    power_index = int(power_index + dif)
-                    l.append({"value": data["dust"], "pow": power_index})
+                age_seconds = max(0, latest_dust_time - data["time"])
+                weight = 0.5 ** (age_seconds / half_life_seconds)
+                weighted_sum += data["dust"] * weight
+                weight_total += weight
 
-            temp_list = [i["value"] for i in l]
-            range_value = round(max(temp_list) - min(temp_list), 1)
-            scaled_rate_of_change = range_value / max(temp_list)
-            weight_factor = 1 - scaled_rate_of_change
-            weight_factor = 0.5 if weight_factor < 0.5 else round(weight_factor, 1)
-
-            sum_value = 0
-            sum_of_power = 0
-
-            for i in l:
-                sum_value += i["value"] * (weight_factor ** i["pow"])
-                sum_of_power += weight_factor ** i["pow"]
-
-            hourly_dust_mg_m3 = round(sum_value / sum_of_power, 3)
+            hourly_dust_mg_m3 = round(weighted_sum / weight_total, 6)
             hourly_pm25_ug_m3 = round(hourly_dust_mg_m3 * 1000, 1)
             hourly_aqi = 500
 
@@ -787,7 +798,9 @@ def AQIdustpm2_5(request, *args, **kwargs):
                 {
                     "hourly": hourly_aqi,
                     "daily": 0,
-                    "time": hourly_dust_data[-1]["time"],
+                    "time": latest_dust_time,
+                    "dust_mg_m3": hourly_dust_mg_m3,
+                    "pm25_ug_m3": hourly_pm25_ug_m3,
                 },
                 status = 200,
             )

@@ -9,32 +9,33 @@ _BACKEND_DIR = os.path.dirname(os.path.dirname(__file__))
 _DEFAULT_RECORD_DIR = os.path.join(_BACKEND_DIR, "exported_csv", "mqtt_records")
 
 SENSOR_CSV_HEADERS = [
-    "readable_time",
-    "time",
-    "room_id",
+    "readable_received_time",
+    "received_time",
+    "operator",
+    "mac_address",
     "node_id",
+    "room_id",
+    "packet_time",
+    "packet_id",
+    "temperature",
+    "humidity",
+    "protocol",
     "co2",
-    "temp",
-    "hum",
-    "light",
-    "dust",
-    "sound",
-    "red",
-    "green",
-    "blue",
-    "tvoc",
+    "dust_density",
     "motion",
 ]
 
 ACTUATOR_CSV_HEADERS = [
-    "readable_time",
-    "time",
-    "room_id",
+    "readable_received_time",
+    "received_time",
+    "operator",
+    "mac_address",
     "node_id",
-    "function",
-    "current_value",
+    "room_id",
+    "packet_time",
+    "protocol",
     "state",
-    "mode",
+    "pwm",
 ]
 
 
@@ -56,6 +57,16 @@ def _append_csv(filename, headers, row):
     csv_path = os.path.join(csv_dir, filename)
 
     with _CSV_LOCK:
+        if os.path.exists(csv_path) and os.path.getsize(csv_path) > 0:
+            with open(csv_path, mode="r", newline="", encoding="utf-8") as csv_file:
+                current_header = next(csv.reader(csv_file), [])
+            if current_header != headers:
+                legacy_name = (
+                    f"{os.path.splitext(filename)[0]}_legacy_"
+                    f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+                )
+                os.replace(csv_path, os.path.join(csv_dir, legacy_name))
+
         should_write_header = not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0
         with open(csv_path, mode="a", newline="", encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=headers, extrasaction="ignore")
@@ -66,11 +77,11 @@ def _append_csv(filename, headers, row):
 
 def append_sensor_record(record):
     row = dict(record)
-    row["readable_time"] = readable_timestamp(row.get("time"))
+    row["readable_received_time"] = readable_timestamp(row.get("received_time"))
     _append_csv("sensor_data.csv", SENSOR_CSV_HEADERS, row)
 
 
 def append_actuator_record(record):
     row = dict(record)
-    row["readable_time"] = readable_timestamp(row.get("time"))
+    row["readable_received_time"] = readable_timestamp(row.get("received_time"))
     _append_csv("actuator_data.csv", ACTUATOR_CSV_HEADERS, row)

@@ -1,9 +1,10 @@
 import ContactPageIcon from '@mui/icons-material/ContactPage';
-import { Grid, Button, Typography } from "@mui/material"
+import { Grid, Button, Typography, useTheme } from "@mui/material"
 import { useState } from 'react';
 import DisabledByDefaultIcon from '@mui/icons-material/DisabledByDefault';
 function ContactForm() {
   const [status, setStatus] = useState(false)
+  const theme = useTheme();
   return (
     <Grid sx={{ position: "fixed", bottom: 0, right: 0, zIndex: 1000 }}>
       {status &&
@@ -19,7 +20,12 @@ function ContactForm() {
         flexDirection: "row",
         alignItems : "center",
         borderRadius: status ? "25px": "50%",
-        border: "2px solid black",
+        border: `2px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
+        backgroundColor: theme.palette.background.surfaceRaised || theme.palette.background.paper,
+        color: theme.palette.text.primary,
+        "&:hover": {
+          backgroundColor: theme.palette.action.hover,
+        },
       }}
       onClick={()=> setStatus(true)}
       >
@@ -27,7 +33,7 @@ function ContactForm() {
           {
           status &&
           <a href="https://docs.google.com/forms/d/e/1FAIpQLSeISswyYk3nAW-WpLGpxwpxXxjRRJfMJEdUZgfnlXc30rUN3Q/viewform?usp=dialog" target="_blank" rel="noopener noreferrer"
-          style={{ textDecoration: 'underline', color: 'black' }}
+          style={{ textDecoration: 'underline', color: theme.palette.text.primary }}
           >
             <Typography sx={{fontWeight: "bold"}}>Give Feedback</Typography>
           </a>

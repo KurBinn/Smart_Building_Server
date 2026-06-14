@@ -137,7 +137,13 @@ const Landing = () => {
                         >
                         {/* xs=collum's width sm={16} md={4} */}
                             <Card
-                            sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                            sx={{
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                bgcolor: theme.palette.background.surface || theme.palette.background.paper,
+                                borderColor: theme.palette.background.borderStrong || theme.palette.divider,
+                            }}
                             >
                             <Box
                                 container
@@ -148,7 +154,7 @@ const Landing = () => {
                                 height="350px"
                                 sx={{
                                     "object-fit": "cover",
-                                    // backgroundColor: "blue",
+                                    backgroundColor: theme.palette.mode === "dark" ? "#111a24" : "#f8fafc",
                                 }}
                             >
                                 <img src={room.image} alt="" />
@@ -172,9 +178,8 @@ const Landing = () => {
                                 >
                                     <Button
                                         size="small"
+                                        variant="contained"
                                         sx={{
-                                            backgroundColor: "black",
-                                            color: "white",
                                             fontSize: "12px",
                                             fontWeight: "bold",
                                             padding: "5px 8px",
@@ -188,9 +193,8 @@ const Landing = () => {
                                 </Link>
                                 <Button
                                     size="small"
+                                    variant="outlined"
                                     sx={{
-                                        backgroundColor: "black",
-                                        color: "white",
                                         fontSize: "12px",
                                         fontWeight: "bold",
                                         padding: "5px 8px",

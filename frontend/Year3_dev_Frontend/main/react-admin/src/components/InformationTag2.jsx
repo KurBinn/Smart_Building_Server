@@ -4,7 +4,7 @@ import {
     useTheme,
 } from '@mui/material';
 import { host } from "../App"
-import { React, useEffect, useState } from "react";
+import { React, useEffect, useRef, useState } from "react";
 import temp_icon from "../assets/temperature.svg";
 import hum_icon from "../assets/humidity.svg";
 import co2_icon from "../assets/co2.svg";
@@ -35,6 +35,7 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
     const [infoData, getInfoData] = useState(null);
     const [nodeData, getNodeData] = useState(null);
     const [aqiInfo, setAQIInfo] = useState([]);
+    const getInformationDataRef = useRef(null);
 
     const iconMap = {
         temp: (
@@ -68,10 +69,23 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
         "hum": { "name": "Humidity", "icon": iconMap["hum"], "unit": "%" },
         "co2": { "name": "Co2", "icon": iconMap["co2"], "unit": "ppm" },
         "tvoc": { "name": "TVOC", "icon": iconMap["tvoc"], "unit": "µg/m3" },
-        "dust": { "name": "Dust", "icon": iconMap["dust"], "unit": "mg/m3" },
+        "dust": { "name": "Dust", "icon": iconMap["dust"], "unit": "\u00b5g/m\u00b3" },
         "sound": { "name": "Sound", "icon": iconMap["sound"], "unit": "dB" },
         "light": { "name": "Light", "icon": iconMap["light"], "unit": "lux" },
         "motion": { "name": "Motion Detection", "icon": iconMap["motion"], "unit": "" },
+    };
+
+    const formatEnvironmentValue = (key, value) => {
+        if (value === "No data") {
+            return value;
+        }
+
+        const numericValue = Number(value);
+        if (key === "dust" && Number.isFinite(numericValue)) {
+            return Number((numericValue * 1000).toFixed(1));
+        }
+
+        return value;
     };
 
     const get_information_data = async (url, access_token) => {
@@ -188,22 +202,24 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
     }
 
     useEffect(() => {
-        if (time_delay !== 0) {
-            if (infoData === null)            //!< this is for the total component always render the first time and then the next time will be setTimeOut
-            {
-                verify_and_get_data(get_information_data, callbackSetSignIn, backend_host, api_informationtag);
+        getInformationDataRef.current = get_information_data;
+    });
+
+    useEffect(() => {
+        const fetchInformation = () => {
+            if (getInformationDataRef.current) {
+                verify_and_get_data(getInformationDataRef.current, callbackSetSignIn, backend_host, api_informationtag);
             }
-            else {
-                const timer = setTimeout(() => {
-                    verify_and_get_data(get_information_data, callbackSetSignIn, backend_host, api_informationtag);
-                }, time_delay);
-                return () => clearTimeout(timer);
-            }
+        };
+
+        fetchInformation();
+        if (time_delay === 0) {
+            return undefined;
         }
-        else {
-            verify_and_get_data(get_information_data, callbackSetSignIn, backend_host, api_informationtag);
-        }
-    }, [infoData, nodeData]);
+
+        const timer = setInterval(fetchInformation, time_delay);
+        return () => clearInterval(timer);
+    }, [api_informationtag, backend_host, callbackSetSignIn, time_delay]);
 
     return (
         <>
@@ -225,7 +241,7 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
                                         <Typography textAlign='center' fontWeight='bold' variant='h3'>
                                         {infoData["temp"]["value"] === 'No data'
                                         ? infoData["temp"]["value"]
-                                        : `${infoData["temp"]["value"]} ${dict_of_enviroment_para_names['temp']['unit']}`}
+                                        : `${formatEnvironmentValue('temp', infoData["temp"]["value"])} ${dict_of_enviroment_para_names['temp']['unit']}`}
                                         </Typography>
                                 </Grid>
                                 <Grid item textAlign="center">
@@ -234,12 +250,12 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
                                         <Typography textAlign='center' fontWeight='bold' variant='h3'>
                                         {infoData["co2"]["value"] === 'No data'
                                         ? infoData["co2"]["value"]
-                                        : `${infoData["co2"]["value"]} ${dict_of_enviroment_para_names['co2']['unit']}`}
+                                        : `${formatEnvironmentValue('co2', infoData["co2"]["value"])} ${dict_of_enviroment_para_names['co2']['unit']}`}
                                         </Typography>
                                 </Grid>
                             </Grid>
                             <Grid container xs={4}>
-                                <AQI room_id={room_id} callbackSetSignIn={callbackSetSignIn} />
+                                <AQI room_id={room_id} callbackSetSignIn={callbackSetSignIn} time_delay={time_delay} />
                             </Grid>
                             <Grid container xs={4} flexDirection="column" justifyContent="space-around" alignItems="center" >
                             <div style={{  marginLeft: "30px" }}>
@@ -249,7 +265,7 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
                                     <Typography textAlign='center' fontWeight='bold' variant='h3'>
                                     {infoData["dust"]["value"] === 'No data'
                                         ? infoData["dust"]["value"]
-                                        : `${infoData["dust"]["value"]} ${dict_of_enviroment_para_names['dust']['unit']}`}
+                                        : `${formatEnvironmentValue('dust', infoData["dust"]["value"])} ${dict_of_enviroment_para_names['dust']['unit']}`}
                                     </Typography>
                                 </Grid>
                                 <Grid item textAlign="center" mt={5}>
@@ -259,7 +275,7 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
                                         <Typography textAlign='center' fontWeight='bold' variant='h3'>
                                         {infoData["light"]["value"] === 'No data'
                                         ? infoData["light"]["value"]
-                                        : `${infoData["light"]["value"]} ${dict_of_enviroment_para_names['light']['unit']}`}
+                                        : `${formatEnvironmentValue('light', infoData["light"]["value"])} ${dict_of_enviroment_para_names['light']['unit']}`}
                                         </Typography>
                                     </Grid>
                                 </Grid>
@@ -273,7 +289,7 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
                                 <Typography fontWeight="bold" variant="h3">
                                     {infoData["hum"]["value"] === 'No data' 
                                         ? infoData["hum"]["value"] 
-                                        : `${infoData["hum"]["value"]} ${dict_of_enviroment_para_names['hum']['unit']}`}
+                                        : `${formatEnvironmentValue('hum', infoData["hum"]["value"])} ${dict_of_enviroment_para_names['hum']['unit']}`}
                                 </Typography>
                             </Grid>
 
@@ -283,7 +299,7 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
                                 <Typography fontWeight="bold" variant="h3">
                                     {infoData["tvoc"]["value"] === 'No data' 
                                         ? infoData["tvoc"]["value"] 
-                                        : `${infoData["tvoc"]["value"]} ${dict_of_enviroment_para_names['tvoc']['unit']}`}
+                                        : `${formatEnvironmentValue('tvoc', infoData["tvoc"]["value"])} ${dict_of_enviroment_para_names['tvoc']['unit']}`}
                                 </Typography>
                             </Grid>
 
@@ -293,7 +309,7 @@ const InformationTag = ({ url, callbackSetSignIn, time_delay, room_id, setActuat
                                 <Typography fontWeight="bold" variant="h3">
                                     {infoData["sound"]["value"] === 'No data' 
                                         ? infoData["sound"]["value"] 
-                                        : `${infoData["sound"]["value"]} ${dict_of_enviroment_para_names['sound']['unit']}`}
+                                        : `${formatEnvironmentValue('sound', infoData["sound"]["value"])} ${dict_of_enviroment_para_names['sound']['unit']}`}
                                 </Typography>
                             </Grid>
 

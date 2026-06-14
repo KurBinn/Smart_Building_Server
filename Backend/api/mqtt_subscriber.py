@@ -56,13 +56,15 @@ def _on_message(client, userdata, msg):
     )
     append_actuator_record(
         {
-            "time": timestamp,
-            "room_id": room_id_val,
+            "received_time": timestamp,
+            "operator": data.get("operator", "actuator_data"),
+            "mac_address": info.get("mac_address", ""),
             "node_id": node_id,
-            "function": act.get("function", info.get("actuator_function", "fan")),
-            "current_value": str(pwm),
+            "room_id": room_id_val,
+            "packet_time": info.get("time", ""),
+            "protocol": info.get("protocol", ""),
             "state": state,
-            "mode": fan_speed,
+            "pwm": pwm,
         }
     )
     print(
