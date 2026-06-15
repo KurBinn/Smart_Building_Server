@@ -1,13 +1,16 @@
-import { useState, useEffect} from "react";
+import { useState, useEffect, useCallback} from "react";
 import { host } from "../../../App";
-import { Typography, Grid, Button, Tooltip } from "@mui/material";
+import { Typography, Grid, Button, Tooltip, Box } from "@mui/material";
 
 function ImageResult({roomIdForNodeConfig, dataRoom, setData, algorithm, communicationRadius, sensingRadius, numberNode}) {
   const url = `http://${host}/api/result_coverage_algorithm?room_id=${roomIdForNodeConfig}&&algorithm=${algorithm}`;
   const [imageDecode, setImageDecode] = useState(null);
   const [imageEncode, setImageEncode] = useState(null);
   const [state, setState] = useState(true);
-  const fetchAndEncodeImage = async (url_image, cmd) => {
+  const uploadedCoverageImage = dataRoom?.uploadedCoverageImage || localStorage.getItem(`coverage_image:${roomIdForNodeConfig}`);
+  const activeAlgorithmImage = state ? imageDecode : imageEncode;
+  const activeImage = uploadedCoverageImage || activeAlgorithmImage;
+  const fetchAndEncodeImage = useCallback(async (url_image, cmd) => {
     try {
         url_image= `http://${host}` + url_image
         const response = await fetch(url_image);
@@ -24,10 +27,10 @@ function ImageResult({roomIdForNodeConfig, dataRoom, setData, algorithm, communi
     } catch (error) {
         console.error("Error:", error);
         }
-    };
+    }, []);
 
 
-  const handleLoad = async() =>{
+  const handleLoad = useCallback(async() =>{
       const token = {access_token: null, refresh_token: null}
       if(localStorage.getItem("access") !== null && localStorage.getItem("refresh") !== null){
           token.access_token = localStorage.getItem("access");
@@ -54,22 +57,23 @@ function ImageResult({roomIdForNodeConfig, dataRoom, setData, algorithm, communi
         fetchAndEncodeImage(data.image_decode, "image_decode")
         fetchAndEncodeImage(data.image_encode, "image_encode")
       } else {
-        alert("Please setting first !!!")
+        console.info("Coverage algorithm result is not ready yet.");
       }
-  }
+  }, [fetchAndEncodeImage, setData, url])
 
   useEffect(()=>{
+    handleLoad();
     const timer = setInterval(() => {
         handleLoad();
     }, 60000);
     return () => clearInterval(timer);
-    },[algorithm])
+    },[handleLoad])
   return (
     <>
-        {dataRoom === null ? <Typography variant = "h1" fontWeight="bold">Loading .... </Typography>:
-          <Grid container direction="column" alignItems="center" justifyContent="center" spacing={2}>
-            {state ?
-            <Grid item container direction="column" alignItems="center" justifyContent="center" spacing={2}>
+        <Grid container direction="column" alignItems="center" justifyContent="center" sx={{ flex: 1, minHeight: 0 }}>
+            {activeImage ?
+            <>
+            <Grid item container direction="column" alignItems="center" justifyContent="center" sx={{ minHeight: 0, flex: 1, width: "100%", overflow: "hidden" }}>
               <Tooltip style={{
                     fontSize: "14px",
                     backgroundColor: "white",
@@ -88,46 +92,59 @@ function ImageResult({roomIdForNodeConfig, dataRoom, setData, algorithm, communi
                     </Grid>
                 }
                 >
-                <img src={imageDecode} alt="Loading ..." style={{ maxWidth: "100%", height: "auto",  marginTop: "40px" }} />
-              </Tooltip>
-            </Grid>:
-            <Grid item container direction="column" alignItems="center" justifyContent="center" spacing={2}>
-              <Tooltip style={{
-                    fontSize: "14px",
-                    backgroundColor: "white",
-                    border: '1px solid #eeeeee',
-                    maxWidth: 600,
-                    whiteSpace: 'normal'
-                }}
-                placement="right"
-                title={
-                    <Grid>
-                        <Typography color="inherit">{`Algorithm: ${algorithm}`}</Typography>
-                        <Typography color="inherit">{`Number Node: ${numberNode}`}</Typography>
-                        <Typography color="inherit">{`Sensing Radius: ${sensingRadius}`}</Typography>
-                        <Typography color="inherit">{`Communication Radius: ${communicationRadius}`}</Typography>
-                        <Typography color="inherit">{`Detail: The image shows the positions of sensor nodes in the network along with the coverage area of each node, their connectivity with neighboring nodes, and how the algorithm selects placement to avoid obstacles, in order to achieve optimal coverage within the room.`}</Typography>
-                    </Grid>
-                }
-                >
-                <img src={imageEncode} alt="Loading ..." style={{ maxWidth: "100%", height: "auto",  marginTop: "40px" }} />
+                <Box
+                  component="img"
+                  src={activeImage}
+                  alt="Coverage optimization result"
+                  sx={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    height: "auto",
+                    objectFit: "contain",
+                    display: "block",
+                    mx: "auto",
+                  }}
+                />
               </Tooltip>
             </Grid>
-            }
+            {imageDecode && imageEncode && !uploadedCoverageImage &&
             <Button sx={{
                           backgroundColor: "black",
                           color: "white",
-                          fontSize: "20px",
+                          fontSize: "13px",
                           fontWeight: "bold",
-                          padding: "5px 12px",
-                          margin: "5px",
+                          padding: "4px 12px",
+                          mt: 1,
                           "&:hover": { backgroundColor: "#6d65ea" }
                           }}
                       variant="contained"
                       onClick = {()=> setState(!state)}
             >Change Image</Button>
+            }
+            </>
+            :
+            <Box
+              sx={{
+                flex: 1,
+                width: "100%",
+                minHeight: { xs: 190, md: 240 },
+                border: "1px dashed",
+                borderColor: "background.borderStrong",
+                borderRadius: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                px: 2,
+                bgcolor: "background.surfaceRaised",
+              }}
+            >
+              <Typography variant="h5" fontWeight="bold" color="text.secondary">
+                No coverage image. Add an image or run algorithm setting.
+              </Typography>
+            </Box>
+            }
         </Grid>
-        }
     </>
   )
 }

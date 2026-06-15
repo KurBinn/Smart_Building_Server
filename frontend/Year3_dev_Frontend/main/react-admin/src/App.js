@@ -27,6 +27,9 @@ function App() {
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
         <UserContext.Provider value={setIsSignin}>
+        <ColorModeContext.Provider value={colorMode}>
+        <ThemeProvider theme={theme}>
+        <CssBaseline/>
         {
             !isSignIn ?
             <>
@@ -36,9 +39,6 @@ function App() {
             </>
             :
             <>
-                <ColorModeContext.Provider value={colorMode}>
-                <ThemeProvider theme={theme}>
-                    <CssBaseline/>
                     <div className="app">
                     <main className="content" >
                         <Topbar setIsSignin={setIsSignin}/>
@@ -56,10 +56,10 @@ function App() {
                         <Footer/>
                     </main>
                     </div>
-                </ThemeProvider>
-                </ColorModeContext.Provider>
             </>
         }
+        </ThemeProvider>
+        </ColorModeContext.Provider>
         </UserContext.Provider>
         </LocalizationProvider>
     );

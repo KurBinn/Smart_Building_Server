@@ -1,6 +1,5 @@
 import { Box, Button, Typography, useTheme } from "@mui/material";
-import { tokens } from "../../theme";
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import DetailsIcon from '@mui/icons-material/Details';
 import Card from '@mui/material/Card';
@@ -9,33 +8,22 @@ import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
 import {host, UserContext} from "../../App";
-import plan_409 from "../../assets/409.svg";
-import plan_410 from "../../assets/410.svg";
-import plan_411 from "../../assets/411.svg";
 import verify_and_get_data from "../../function/fetchData";
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { getDefaultRoomImage } from "../../utils/roomImage";
+
 const Landing = () => {
     const callbackSetSignIn = useContext(UserContext);
     const theme = useTheme();
-    const colors = tokens(theme.palette.mode);
     const [room_data, setRoom_data] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const image_room =
-    {
-        1: plan_409,
-        2: plan_410,
-        3: plan_411,
-        4: plan_409,
-        407: plan_409,
-        507: plan_409,
-    }
 
     const backend_host = host;
     const api_room_data = `http://${backend_host}/api/configuration_room`;
 
-    const get_room_data = async (url, access_token) =>
+    const get_room_data = useCallback(async (url, access_token) =>
     {
         const headers = {
             'Content-Type':'application/json',
@@ -57,10 +45,9 @@ const Landing = () => {
                 all_keys_in_response_room_data_json_dispatch.forEach((each_key) => 
                 {
                         const room = response_room_data_json_dispatch[each_key]
-                        const key = `room_${room["id"]}_${room["construction_name"]}`;
                         new_room_data.push({
                             "name": `room ${room["room_id"]} ${room["construction_name"]}`,
-                            "image": image_room[room["room_id"]],
+                            "image": getDefaultRoomImage(room["room_id"]),
                             "room_id": room["room_id"],
                             "info": room["information"],
                             "image_url": room["image"],
@@ -81,7 +68,7 @@ const Landing = () => {
         {
             alert(`Can not call to server! Error code: ${response_room_data.status}`);
         }
-    }
+    }, [])
 
     const handleExportData = async (room_id)=>{
         const headers = {
@@ -109,7 +96,7 @@ const Landing = () => {
 
     useEffect(()=>{
         verify_and_get_data(get_room_data, callbackSetSignIn, backend_host, api_room_data);
-    },[]);
+    },[api_room_data, backend_host, callbackSetSignIn, get_room_data]);
 
     
     return (
@@ -153,11 +140,22 @@ const Landing = () => {
                                 justifyContent="center"
                                 height="350px"
                                 sx={{
-                                    "object-fit": "cover",
+                                    overflow: "hidden",
                                     backgroundColor: theme.palette.mode === "dark" ? "#111a24" : "#f8fafc",
                                 }}
                             >
-                                <img src={room.image} alt="" />
+                                <Box
+                                    component="img"
+                                    src={room.image}
+                                    alt={`${room.name} floor plan`}
+                                    sx={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                        objectPosition: "center",
+                                        display: "block",
+                                    }}
+                                />
                             </Box>
                             <CardContent sx={{ flexGrow: 1 }}>
                                 <Typography gutterBottom variant="h4" component="h2" sx={{fontWeight: "bold"}}>

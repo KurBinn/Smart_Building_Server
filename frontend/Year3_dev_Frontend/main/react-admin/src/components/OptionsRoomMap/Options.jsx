@@ -14,7 +14,7 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
     const theme = useTheme();
     const [status, setStatus] = useState(true);
     const [statusConnections, setStatusConnections] = useState(false);
-    const [image, setImage] = useState(() => getStoredRoomImage());
+    const [image, setImage] = useState(() => getStoredRoomImage(room_id));
 
     const convertToBase64 = (file) => {
         return new Promise((resolve, reject) => {
@@ -30,13 +30,13 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
         const file = event.target.files[0];
         if (file) {
             const base64 = await convertToBase64(file);
-            setImage(saveRoomImage(base64));
+            setImage(saveRoomImage(base64, room_id));
         }
     };
 
     useEffect(() => {
-        setImage(getStoredRoomImage());
-    }, [isImageFetched]);
+        setImage(getStoredRoomImage(room_id));
+    }, [isImageFetched, room_id]);
 
     const toolbarButtonSx = {
         width: { xs: "calc(50% - 10px)", sm: "120px", lg: "140px" },
@@ -107,7 +107,7 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
 
             </Grid>
             {status? (
-                <RoomMap2D url={image} configurationNodeAll={configurationNodeAll} setListNode={setListNode}
+                <RoomMap2D room_id={room_id} url={image} configurationNodeAll={configurationNodeAll} setListNode={setListNode}
                 callbackSetSignIn = {callbackSetSignIn} setSeparate = {setSeparate} widthMap={widthMap} heightMap={heightMap} data_passed_from_landingpage={data_passed_from_landingpage}/>
             ) : (statusConnections ?
                 // <RoomMapConnections
@@ -117,6 +117,7 @@ function Options({ room_id, callbackSetSignIn, configurationNodeAll, setListNode
                 // setSeparate = {setSeparate}
                 // />
                 <RoomMap2D
+                    room_id={room_id}
                     url={image}
                     configurationNodeAll={configurationNodeAll}
                     setListNode={setListNode}

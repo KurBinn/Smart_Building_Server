@@ -32,6 +32,14 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 SENSOR_FUNCTIONS = ("sensor", "sensor_actuator")
+PM25_AQI_BREAKPOINTS = [
+    {"conclo": 0.0, "conchi": 12.0, "aqilo": 0, "aqihi": 50},
+    {"conclo": 12.1, "conchi": 35.4, "aqilo": 51, "aqihi": 100},
+    {"conclo": 35.5, "conchi": 55.4, "aqilo": 101, "aqihi": 150},
+    {"conclo": 55.5, "conchi": 150.4, "aqilo": 151, "aqihi": 200},
+    {"conclo": 150.5, "conchi": 250.4, "aqilo": 201, "aqihi": 300},
+    {"conclo": 250.5, "conchi": 500.4, "aqilo": 301, "aqihi": 500},
+]
 
 def _is_actuator_function(function):
     return function != "sensor"
@@ -50,6 +58,31 @@ def _normalize_dust_mg_m3(value):
     if dust > 1:
         return dust / 1000
     return dust
+
+def _pm25_ug_m3_to_aqi(pm25_ug_m3):
+    try:
+        pm25 = float(pm25_ug_m3)
+    except (TypeError, ValueError):
+        return None
+
+    if pm25 < 0:
+        return None
+
+    if pm25 > PM25_AQI_BREAKPOINTS[-1]["conchi"]:
+        return PM25_AQI_BREAKPOINTS[-1]["aqihi"]
+
+    for breakpoint in PM25_AQI_BREAKPOINTS:
+        if breakpoint["conclo"] <= pm25 <= breakpoint["conchi"]:
+            return round(
+                (
+                    (breakpoint["aqihi"] - breakpoint["aqilo"])
+                    * (pm25 - breakpoint["conclo"])
+                    / (breakpoint["conchi"] - breakpoint["conclo"])
+                )
+                + breakpoint["aqilo"]
+            )
+
+    return None
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
@@ -691,44 +724,6 @@ def AQIdustpm2_5(request, *args, **kwargs):
 
     try:
         room_id = request.GET["room_id"]
-        pm2_5_table = [
-            {
-                "conclo": 0.0,
-                "conchi": 12.0,
-                "aqilo": 0,
-                "aqihi": 50,
-            },
-            {
-                "conclo": 12.1,
-                "conchi": 35.4,
-                "aqilo": 51,
-                "aqihi": 100,
-            },
-            {
-                "conclo": 35.5,
-                "conchi": 55.4,
-                "aqilo": 101,
-                "aqihi": 150,
-            },
-            {
-                "conclo": 55.5,
-                "conchi": 150.4,
-                "aqilo": 151,
-                "aqihi": 200,
-            },
-            {
-                "conclo": 150.5,
-                "conchi": 250.4,
-                "aqilo": 201,
-                "aqihi": 300,
-            },
-            {
-                "conclo": 250.5,
-                "conchi": 500.4,
-                "aqilo": 301,
-                "aqihi": 500,
-            },
-        ]
 
         room_sensor_query = RawSensorMonitor.objects.filter(room_id=room_id)
         latest_sensor = room_sensor_query.order_by("-time").first()
@@ -740,15 +735,15 @@ def AQIdustpm2_5(request, *args, **kwargs):
 
         latest_time = int(latest_sensor.time)
         filter_time = latest_time - 12 * 60 * 60
-        hourly_dust_data = RawSensorMonitorSerializer(
+        recent_dust_data = RawSensorMonitorSerializer(
             room_sensor_query.filter(time__gt=filter_time, dust__gt=0),
             many=True,
         ).data
     
-        if len(hourly_dust_data) != 0:
+        if len(recent_dust_data) != 0:
     
             extracted_data = []
-            for data in hourly_dust_data:
+            for data in recent_dust_data:
                 dust_mg_m3 = _normalize_dust_mg_m3(data["dust"])
                 if dust_mg_m3 is not None and dust_mg_m3 > 0:
                     extracted_data.append(
@@ -763,36 +758,11 @@ def AQIdustpm2_5(request, *args, **kwargs):
 
             extracted_data.sort(key=lambda x: x["time"])
 
-            latest_dust_time = extracted_data[-1]["time"]
-            weighted_sum = 0
-            weight_total = 0
-            half_life_seconds = 60 * 60
-            for data in extracted_data:
-                age_seconds = max(0, latest_dust_time - data["time"])
-                weight = 0.5 ** (age_seconds / half_life_seconds)
-                weighted_sum += data["dust"] * weight
-                weight_total += weight
-
-            hourly_dust_mg_m3 = round(weighted_sum / weight_total, 6)
+            latest_dust_data = extracted_data[-1]
+            latest_dust_time = latest_dust_data["time"]
+            hourly_dust_mg_m3 = round(latest_dust_data["dust"], 6)
             hourly_pm25_ug_m3 = round(hourly_dust_mg_m3 * 1000, 1)
-            hourly_aqi = 500
-
-            for i in pm2_5_table:
-                if hourly_pm25_ug_m3 > 500.4:
-                    break
-                if (
-                    hourly_pm25_ug_m3 <= i["conchi"]
-                    and hourly_pm25_ug_m3 >= i["conclo"]
-                ):
-                    conclo = i["conclo"]
-                    conchi = i["conchi"]
-                    aqilo = i["aqilo"]
-                    aqihi = i["aqihi"]
-                    hourly_aqi = round(
-                        (aqihi - aqilo) * (hourly_pm25_ug_m3 - conclo) / (conchi - conclo)
-                        + aqilo
-                    )
-                    break
+            hourly_aqi = _pm25_ug_m3_to_aqi(hourly_pm25_ug_m3)
 
             return Response(
                 {
@@ -801,6 +771,7 @@ def AQIdustpm2_5(request, *args, **kwargs):
                     "time": latest_dust_time,
                     "dust_mg_m3": hourly_dust_mg_m3,
                     "pm25_ug_m3": hourly_pm25_ug_m3,
+                    "samples_considered": len(extracted_data),
                 },
                 status = 200,
             )

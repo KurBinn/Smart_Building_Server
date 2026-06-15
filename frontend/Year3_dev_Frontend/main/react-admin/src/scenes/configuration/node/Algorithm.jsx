@@ -1,8 +1,8 @@
-import {Typography,Paper, InputLabel, TextField, Grid, Button, Box, Dialog, DialogContent, DialogContentText, DialogTitle, Select, MenuItem, useTheme} from "@mui/material"
+import {Typography,Paper, TextField, Grid, Button, Box, Dialog, DialogContent, DialogContentText, DialogTitle, Select, MenuItem, useTheme} from "@mui/material"
 import { useState } from "react";
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import CloseIcon from '@mui/icons-material/Close';
-import { Border } from "victory";
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import { host } from "../../../App";
 import ImageResult from "./ImageResult";
 
@@ -16,6 +16,7 @@ export default function Algorithm({roomIdForNodeConfig}) {
   const [numberNode, setNumberNode] = useState('');
   const [communicationRadius, setCommunicationRadius] = useState('');
   const [sensingRadius, setSensingRadius] = useState('');
+  const uploadInputId = `coverage-image-upload-${roomIdForNodeConfig}`;
   const url = `http://${host}/api/coverage_algorithm`
   const handleClick = async() =>{
     if (numberNode && communicationRadius && sensingRadius) {
@@ -63,25 +64,56 @@ export default function Algorithm({roomIdForNodeConfig}) {
     setOpen(false);
 };
   return (
-    <Grid>
-          <Paper sx={{ p: { xs: 1.5, md: 2 }, width: "100%", maxWidth: "100%", minHeight: { xs: 260, md: 300 }, maxHeight: { md: "clamp(320px, 42vh, 520px)" }, overflowY: "auto", border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', boxShadow: 0, bgcolor: "background.paper" }}>
+    <Grid sx={{ height: "100%" }}>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, width: "100%", maxWidth: "100%", height: { xs: "380px", md: "clamp(370px, 41vh, 500px)", xl: "clamp(390px, 42vh, 540px)" }, overflow: "hidden", border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', boxShadow: 0, bgcolor: "background.paper", display: "flex", flexDirection: "column" }}>
       <Typography align="center" fontWeight="bold" sx={{ fontSize: { xs: "20px", md: "24px" } }}>
         Coverage Optimization Algorithm
       </Typography>
-      <Button
-            startIcon={<PermDataSettingIcon />}
-            sx={{
-                fontSize: "10px",
-                fontWeight: "bold",
-                padding: "5px 12px",
-                mt: 2,
-                }}
-            variant="contained"
+      <Box sx={{ display: "flex", gap: 1, mt: 1.5, mb: 1, flexWrap: "wrap", flex: "0 0 auto" }}>
+        <Button
+              startIcon={<PermDataSettingIcon />}
+              sx={{
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  padding: "5px 12px",
+                  }}
+              variant="contained"
 
-            onClick={() => setOpen(true)}
-            >
-                Setting
-      </Button>
+              onClick={() => setOpen(true)}
+              >
+                  Setting
+        </Button>
+        <input
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          id={uploadInputId}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              localStorage.setItem(`coverage_image:${roomIdForNodeConfig}`, reader.result);
+              setData({ uploadedCoverageImage: reader.result });
+            };
+            reader.readAsDataURL(file);
+            event.target.value = "";
+          }}
+        />
+        <Button
+          component="label"
+          htmlFor={uploadInputId}
+          startIcon={<AddPhotoAlternateIcon />}
+          sx={{
+            fontSize: "10px",
+            fontWeight: "bold",
+            padding: "5px 12px",
+          }}
+          variant="outlined"
+        >
+          Add / Change Image
+        </Button>
+      </Box>
       <ImageResult roomIdForNodeConfig={roomIdForNodeConfig} dataRoom={dataRoom} setData={setData} algorithm={algorithm}
       communicationRadius={communicationRadius} sensingRadius={sensingRadius} numberNode={numberNode}/>
     </Paper>

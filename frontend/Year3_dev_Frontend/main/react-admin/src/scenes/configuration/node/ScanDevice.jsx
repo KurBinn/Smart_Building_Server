@@ -171,7 +171,7 @@ export default function ScanDevice({roomIdForNodeConfig}) {
     return () => clearInterval(timer);
   },[])
   return (
-  <TableContainer sx={{ width: "100%", overflowX: "auto", bgcolor: "background.paper", height: { xs: "300px", md: "clamp(280px, 32vh, 380px)" }, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', p:{ xs: 1, md: 2 }, alignItems: 'center', justifyContent: 'center',}} >
+  <TableContainer sx={{ width: "100%", overflowX: "auto", bgcolor: "background.paper", height: { xs: "380px", md: "clamp(390px, 43vh, 520px)", xl: "clamp(420px, 44vh, 560px)" }, border: `1px solid ${theme.palette.divider}`, borderRadius: '12px', p:{ xs: 1, md: 2 }, alignItems: 'center', justifyContent: 'center',}} >
     <Header title={`Unprovisioned device in room ${roomIdForNodeConfig}`} fontSize="20px"/>
     <Table size="small" stickyHeader>
         <TableHead>

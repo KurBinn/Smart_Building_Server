@@ -239,10 +239,10 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                             roomSize={roomSize}
                 /> */}
                 <Grid container spacing={2} sx={{ alignItems: "flex-start" }}>
-                    <Grid item xs={12} lg={5} sx={{ minWidth: 0 }}>
+                    <Grid item xs={12} lg={6} sx={{ minWidth: 0 }}>
                         <Grid container direction="column" spacing={2} sx={{ minWidth: 0 }}>
                             <Grid item sx={{ minWidth: 0, width: "100%", maxWidth: "100%" }}>
-                                <TableContainer sx={{ ...panelSx, width: "100%", maxWidth: "100%", overflowX: "auto", height: { xs: "340px", md: "clamp(340px, 38vh, 520px)" }, overflowY: "auto", p:{ xs: 1, md: 2 }}}>
+                                <TableContainer sx={{ ...panelSx, width: "100%", maxWidth: "100%", overflowX: "auto", height: { xs: "340px", md: "clamp(330px, 39vh, 430px)", xl: "clamp(350px, 38vh, 460px)" }, overflowY: "auto", p:{ xs: 1, md: 2 }}}>
                                     <Header title={`All node records in room ${roomIdForNodeConfig}`} fontSize="20px"/>
                                     <Table size="small" stickyHeader sx={{ minWidth: 760 }}>
                                         <TableHead>
@@ -303,9 +303,9 @@ export default function NodeConfig({roomIdForNodeConfig, setConfig, roomSize}) {
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item xs={12} lg={7} sx={{ minWidth: 0 }}>
+                    <Grid item xs={12} lg={6} sx={{ minWidth: 0 }}>
                         <Grid container direction="column" spacing={2} sx={{ minWidth: 0 }}>
-                            <Grid item sx={{ height: { xs: "min(70vh, 520px)", md: "clamp(420px, 54vh, 680px)" }, minHeight: { xs: 380, md: 420 }, width:"100%", minWidth: 0 }}>
+                            <Grid item sx={{ height: { xs: "min(70vh, 520px)", md: "clamp(420px, 54vh, 650px)" }, minHeight: { xs: 380, md: 420 }, width:"100%", minWidth: 0 }}>
                                 <Options room_id={roomIdForNodeConfig}
                                 callbackSetSignIn={callbackSetSignIn}
                                 configurationNodeAll={configurationNodeAll}

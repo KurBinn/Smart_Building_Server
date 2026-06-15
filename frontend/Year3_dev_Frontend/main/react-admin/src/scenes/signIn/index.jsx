@@ -1,21 +1,23 @@
 import * as React from 'react';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
-import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
 import Link from '@mui/material/Link';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ContrastIcon from '@mui/icons-material/Contrast';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
-import { createTheme, ThemeProvider, useTheme } from '@mui/material/styles';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import { useTheme } from '@mui/material/styles';
 import { useContext } from 'react';
 import { host, UserContext } from '../../App';
-import { localStorageAvailable } from '@mui/x-data-grid/utils/utils';
 import { useEffect, useState } from 'react';
 import verifyAccessToken from "../../function/verifyAccessToken";
 import verifyRefreshToken from "../../function/verifyRefreshToken";
+import { ColorModeContext } from '../../theme';
 
 function Copyright(props) {
 	return (
@@ -34,7 +36,10 @@ export default function SignIn({setSignUp, setIsSignin, setForgetPassword})
 {
     const [isLoading, setIsLoading] = useState(true);
     const backend_host = host;
-    const checkIfAlreadySignIn = async () =>
+    const theme = useTheme();
+    const colorMode = useContext(ColorModeContext);
+    const isDarkMode = theme.palette.mode === "dark";
+    const checkIfAlreadySignIn = React.useCallback(async () =>
     {
         if(localStorage.getItem("access") !== null && localStorage.getItem("refresh") !== null)
         {
@@ -57,7 +62,7 @@ export default function SignIn({setSignUp, setIsSignin, setForgetPassword})
         {
             setIsLoading(false);
         }
-    }
+    }, [setIsSignin]);
 	const callbackSetIsSignIn = useContext(UserContext);
     const getAuthentication  = async (username, password) =>
     {
@@ -124,28 +129,66 @@ export default function SignIn({setSignUp, setIsSignin, setForgetPassword})
 
     useEffect(()=>{
         checkIfAlreadySignIn();
-    }, []);
+    }, [checkIfAlreadySignIn]);
     return (
         <>
         {
         !isLoading
         &&
-        <Container component="main" maxWidth="xs">
-            <CssBaseline />
+        <Box
+            component="main"
+            sx={{
+                minHeight: "100vh",
+                bgcolor: "background.default",
+                color: "text.primary",
+                display: "flex",
+                alignItems: "center",
+                py: { xs: 4, md: 8 },
+                px: 2,
+                position: "relative",
+            }}
+        >
+        <Tooltip title={`Switch to ${isDarkMode ? "light" : "dark"} mode`}>
+            <IconButton
+                aria-label="toggle theme"
+                onClick={colorMode.toggleColorMode}
+                sx={{
+                    position: "absolute",
+                    top: 18,
+                    right: 18,
+                    border: `1px solid ${theme.palette.background.border || theme.palette.divider}`,
+                    bgcolor: "background.surface",
+                    color: "text.primary",
+                    "&:hover": {
+                        bgcolor: "background.surfaceRaised",
+                    },
+                }}
+            >
+                <ContrastIcon />
+            </IconButton>
+        </Tooltip>
+
+        <Container component="section" maxWidth="xs">
 
             <Box
             sx={{
-                marginTop: 8,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                p: { xs: 3, sm: 4 },
+                borderRadius: "16px",
+                border: `1px solid ${theme.palette.background.borderStrong || theme.palette.divider}`,
+                bgcolor: "background.surface",
+                boxShadow: isDarkMode
+                    ? "0 24px 70px rgba(0, 0, 0, 0.35)"
+                    : "0 24px 70px rgba(15, 23, 42, 0.12)",
             }}
             >
-            <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+            <Avatar sx={{ m: 1, bgcolor: isDarkMode ? 'primary.main' : 'secondary.main', color: isDarkMode ? 'primary.contrastText' : 'inherit' }}>
                 <LockOutlinedIcon />
             </Avatar>
 
-            <Typography component="h1" variant="h5">
+            <Typography component="h1" variant="h5" sx={{ fontWeight: 700 }}>
                 Sign in
             </Typography>
 
@@ -159,6 +202,7 @@ export default function SignIn({setSignUp, setIsSignin, setForgetPassword})
                 name="username"
                 autoComplete="username"
                 autoFocus
+                sx={{ bgcolor: "background.paper" }}
                 />
 
                 <TextField
@@ -170,6 +214,7 @@ export default function SignIn({setSignUp, setIsSignin, setForgetPassword})
                 type="password"
                 id="password"
                 autoComplete="current-password"
+                sx={{ bgcolor: "background.paper" }}
                 />
 
                 {/* <FormControlLabel
@@ -204,6 +249,7 @@ export default function SignIn({setSignUp, setIsSignin, setForgetPassword})
 
             <Copyright sx={{ mt: 8, mb: 4 }} />
         </Container>
+        </Box>
     }
     </>
     );

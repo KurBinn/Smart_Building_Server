@@ -11,7 +11,7 @@ import verifyAccessToken from '../../function/verifyAccessToken';
 import verifyRefreshToken from '../../function/verifyRefreshToken';
 import { Box3 } from "three";
 import { Tooltip, Grid, Typography, Box, useTheme } from "@mui/material";
-import { DEFAULT_ROOM_IMAGE, sanitizeRoomImage } from "../../utils/roomImage";
+import { getDefaultRoomImage, sanitizeRoomImage } from "../../utils/roomImage";
 
 export let data_max_min = []
 
@@ -182,11 +182,11 @@ function ClickCoordinates({ clickPos }) {
   ) : null;
 }
 
-function RoomMap2D({ url, configurationNodeAll, setListNode, callbackSetSignIn, setSeparate, widthMap, heightMap, statusConnections, data_passed_from_landingpage }) {
+function RoomMap2D({ room_id, url, configurationNodeAll, setListNode, callbackSetSignIn, setSeparate, widthMap, heightMap, statusConnections, data_passed_from_landingpage }) {
   const theme = useTheme();
   const [clickPos, setClickPos] = useState(null);
   const [selectedNodes, setSelectedNodes] = useState([]);
-  const safeImageUrl = sanitizeRoomImage(url) || DEFAULT_ROOM_IMAGE;
+  const safeImageUrl = sanitizeRoomImage(url) || getDefaultRoomImage(room_id);
 
   const addSelectedNode = (id, type) => {
     setSelectedNodes((prevData) => {

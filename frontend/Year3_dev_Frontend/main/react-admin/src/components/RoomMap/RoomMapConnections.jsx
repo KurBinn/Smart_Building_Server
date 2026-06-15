@@ -14,7 +14,7 @@ const RoomMap = ({ room_id, callbackSetSignIn, backend_host, setSeparate}) => {
     const [sizeRoom, setSizeRoom] =  useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const api_to_fetch = `http://${backend_host}/api/heatmap?room_id=${room_id}`;
-    const image = getStoredRoomImage();
+    const image = getStoredRoomImage(room_id);
     const offset = -25
     const fetch_data_function = async (url, access_token) => {
         const headers =

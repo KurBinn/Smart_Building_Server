@@ -12,7 +12,7 @@ import EnergyChart from "../../components/EnergyChart/EnergyChart2";
 import Options from "../../components/OptionsRoomMap/Options";
 import verify_and_get_data from "../../function/fetchData";
 import DetailNode from "../../components/NodeInfo/DetailNode";
-import { DEFAULT_ROOM_IMAGE, fetchRoomImageAsDataUrl, saveRoomImage } from "../../utils/roomImage";
+import { fetchRoomImageAsDataUrl, getDefaultRoomImage, saveRoomImage } from "../../utils/roomImage";
 
 
 const LIVE_REFRESH_MS = 5000;
@@ -22,7 +22,7 @@ const Dashboard = () => {
     const location = useLocation();
     const data_passed_from_landingpage = location.state ?? null;
     let room_id = data_passed_from_landingpage == null ? 1 : data_passed_from_landingpage.room_id
-    const url_image = data_passed_from_landingpage?.image_url ?? null;
+    const url_image = data_passed_from_landingpage?.image ?? data_passed_from_landingpage?.image_url ?? null;
     const theme = useTheme();
     const callbackSetSignIn = useContext(UserContext);
     const [optionChartData] = useState("now")
@@ -124,15 +124,15 @@ const Dashboard = () => {
     const fetchAndEncodeImage = useCallback(async () => {
         try {
             setIsImageFetched(false);
-            const imageSource = await fetchRoomImageAsDataUrl(url_image, backend_host);
-            saveRoomImage(imageSource);
+            const imageSource = await fetchRoomImageAsDataUrl(url_image, backend_host, room_id);
+            saveRoomImage(imageSource, room_id);
             setIsImageFetched(true);
         } catch (error) {
             console.error("Error while loading room image:", error);
-            saveRoomImage(DEFAULT_ROOM_IMAGE);
+            saveRoomImage(getDefaultRoomImage(room_id), room_id);
             setIsImageFetched(true);
         }
-    }, [backend_host, url_image]);
+    }, [backend_host, room_id, url_image]);
 
     useEffect(()=>{
         fetchAndEncodeImage()

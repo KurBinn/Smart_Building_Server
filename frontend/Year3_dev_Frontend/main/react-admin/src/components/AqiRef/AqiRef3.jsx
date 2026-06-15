@@ -1,4 +1,4 @@
-import { React, useEffect, useState } from "react";
+import { React, useCallback, useEffect, useState } from "react";
 
 import { Grid, Paper, Tooltip, Typography, useTheme } from "@mui/material";
 import ThermostatIcon from '@mui/icons-material/Thermostat';
@@ -12,6 +12,15 @@ import { useTranslation } from "react-i18next";
 import  "../../utils/i18n";
 import { getAqiRating, normalizeAqiValue, NO_AQI_RATING } from "../../utils/aqi";
 
+const buildNoAqiPayload = () => ({
+    "aqi": "No data",
+    "time": 0,
+    "rating": {
+        "color": NO_AQI_RATING.color,
+        "rate": NO_AQI_RATING.level,
+    },
+});
+
 export default function AqiRef({ callbackSetSignIn, time_delay }) {
     const url = `http://${host}/api/aqi_ref`;
     const theme = useTheme();
@@ -20,7 +29,7 @@ export default function AqiRef({ callbackSetSignIn, time_delay }) {
 
     const [data, setData] = useState(null);
 
-    const fetch_data_function = async (api, access_token) => {
+    const fetch_data_function = useCallback(async (api, access_token) => {
 
         const headers =
         {
@@ -36,7 +45,14 @@ export default function AqiRef({ callbackSetSignIn, time_delay }) {
         const response = await fetch(api, option_fetch);
         if (response.status === 200) {
             const response_data = await response.json();
-            const new_data = { ...(response_data["Response"] || {}) };
+            const payload = response_data["Response"];
+            if (!payload || typeof payload !== "object") {
+                setData(buildNoAqiPayload());
+                setIsLoading(false);
+                return;
+            }
+
+            const new_data = { ...payload };
             const aqi = normalizeAqiValue(new_data["aqi"]);
             const rating = getAqiRating(aqi);
 
@@ -49,19 +65,10 @@ export default function AqiRef({ callbackSetSignIn, time_delay }) {
             setData(new_data);
         }
         else {
-            let new_data = {
-                "aqi": "No data",
-                "time": 0,
-            };
-            new_data["rating"] =
-            {
-                "color": NO_AQI_RATING.color,
-                "rate": NO_AQI_RATING.level,
-            }
-            setData(new_data);
+            setData(buildNoAqiPayload());
         }
         setIsLoading(false);
-    }
+    }, []);
 
     useEffect(() => {
         if (data === null)            //!< this is for the total component always render the first time and then the next time will be setTimeOut
@@ -74,7 +81,7 @@ export default function AqiRef({ callbackSetSignIn, time_delay }) {
             }, time_delay);
             return () => clearTimeout(timer);
         }
-    }, [data, callbackSetSignIn, time_delay, url])
+    }, [data, callbackSetSignIn, fetch_data_function, time_delay, url])
     return (
         <>
             {   isLoading ?

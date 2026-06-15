@@ -13,6 +13,14 @@ const AQI = ({ room_id, callbackSetSignIn, time_delay = 0 }) =>
         "hourly": "No data",
         "time": 0,
     })
+    const setNoData = useCallback(() => {
+        setAqi({
+            "level": NO_AQI_RATING.level,
+            "color": NO_AQI_RATING.color,
+            "hourly": "No data",
+            "time": 0,
+        });
+    }, []);
     const url = `http://${host}/api/room/AQIdustpm2_5?room_id=${room_id}`;
     const theme = useTheme();
     const {t} = useTranslation()
@@ -39,6 +47,7 @@ const AQI = ({ room_id, callbackSetSignIn, time_delay = 0 }) =>
             data = await response.json();
           } catch (e) {
             console.error("JSON parse error:", e);
+            setNoData();
             return;
           }
 
@@ -55,16 +64,14 @@ const AQI = ({ room_id, callbackSetSignIn, time_delay = 0 }) =>
         }
         else
         {
-            await response.json();
-            let new_data = {
-                "level": NO_AQI_RATING.level,
-                "color": NO_AQI_RATING.color,
-                "hourly": "No data",
-                "time": 0,
-            };
-            setAqi(new_data);   
+            try {
+                await response.json();
+            } catch (e) {
+                console.error("JSON parse error:", e);
+            }
+            setNoData();
         }
-    }, []);
+    }, [setNoData]);
     
     useEffect(()=>{
         verify_and_get_data(fetch_data_function, callbackSetSignIn, host, url);

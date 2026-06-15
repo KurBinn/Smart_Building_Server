@@ -1,4 +1,17 @@
-export const DEFAULT_ROOM_IMAGE = "/room2.png";
+export const ROOM_IMAGE_BY_ID = {
+  1: "/room.png",
+  2: "/room2.png",
+  407: "/room407.png",
+};
+
+export const DEFAULT_ROOM_IMAGE = ROOM_IMAGE_BY_ID[1];
+
+export const getDefaultRoomImage = (roomId) => ROOM_IMAGE_BY_ID[Number(roomId)] || DEFAULT_ROOM_IMAGE;
+
+const getStoredRoomImageKey = (roomId) => {
+  const numericRoomId = Number(roomId);
+  return Number.isFinite(numericRoomId) ? `uploadedImage:${numericRoomId}` : "uploadedImage";
+};
 
 const hasHttpProtocol = (value) => /^https?:\/\//i.test(value);
 
@@ -26,11 +39,12 @@ export const sanitizeRoomImage = (imageValue) => {
   return imageValue;
 };
 
-export const resolveRoomImageUrl = (imageUrl, backendHost) => {
+export const resolveRoomImageUrl = (imageUrl, backendHost, roomId) => {
   const sanitizedImageUrl = sanitizeRoomImage(imageUrl);
+  const defaultRoomImage = getDefaultRoomImage(roomId);
 
   if (!sanitizedImageUrl) {
-    return DEFAULT_ROOM_IMAGE;
+    return defaultRoomImage;
   }
 
   if (
@@ -41,7 +55,7 @@ export const resolveRoomImageUrl = (imageUrl, backendHost) => {
     return sanitizedImageUrl;
   }
 
-  if (sanitizedImageUrl === DEFAULT_ROOM_IMAGE) {
+  if (Object.values(ROOM_IMAGE_BY_ID).includes(sanitizedImageUrl)) {
     return sanitizedImageUrl;
   }
 
@@ -55,34 +69,37 @@ export const resolveRoomImageUrl = (imageUrl, backendHost) => {
     : `${backendOrigin}/${sanitizedImageUrl}`;
 };
 
-export const getStoredRoomImage = () => {
-  const storedImage = sanitizeRoomImage(localStorage.getItem("uploadedImage"));
+export const getStoredRoomImage = (roomId) => {
+  const storageKey = getStoredRoomImageKey(roomId);
+  const storedImage = sanitizeRoomImage(localStorage.getItem(storageKey));
 
   if (!storedImage) {
-    localStorage.removeItem("uploadedImage");
-    return DEFAULT_ROOM_IMAGE;
+    localStorage.removeItem(storageKey);
+    return getDefaultRoomImage(roomId);
   }
 
   return storedImage;
 };
 
-export const saveRoomImage = (imageValue) => {
+export const saveRoomImage = (imageValue, roomId) => {
+  const storageKey = getStoredRoomImageKey(roomId);
   const sanitizedImage = sanitizeRoomImage(imageValue);
 
   if (!sanitizedImage) {
-    localStorage.removeItem("uploadedImage");
-    return DEFAULT_ROOM_IMAGE;
+    localStorage.removeItem(storageKey);
+    return getDefaultRoomImage(roomId);
   }
 
-  localStorage.setItem("uploadedImage", sanitizedImage);
+  localStorage.setItem(storageKey, sanitizedImage);
   return sanitizedImage;
 };
 
-export const fetchRoomImageAsDataUrl = async (imageUrl, backendHost) => {
-  const resolvedImageUrl = resolveRoomImageUrl(imageUrl, backendHost);
+export const fetchRoomImageAsDataUrl = async (imageUrl, backendHost, roomId) => {
+  const resolvedImageUrl = resolveRoomImageUrl(imageUrl, backendHost, roomId);
+  const defaultRoomImage = getDefaultRoomImage(roomId);
 
   if (
-    resolvedImageUrl === DEFAULT_ROOM_IMAGE ||
+    Object.values(ROOM_IMAGE_BY_ID).includes(resolvedImageUrl) ||
     resolvedImageUrl.startsWith("data:image/") ||
     resolvedImageUrl.startsWith("blob:")
   ) {
@@ -93,11 +110,11 @@ export const fetchRoomImageAsDataUrl = async (imageUrl, backendHost) => {
   const contentType = response.headers.get("content-type") || "";
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch room image. Status: ${response.status}`);
+    return defaultRoomImage;
   }
 
   if (!contentType.startsWith("image/")) {
-    throw new Error(`Room image response is not an image. Content-Type: ${contentType || "unknown"}`);
+    return defaultRoomImage;
   }
 
   const blob = await response.blob();
